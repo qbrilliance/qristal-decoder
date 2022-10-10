@@ -51,10 +51,13 @@ When you're ready to make this README your own, just edit this file and use the 
 ## Suggestions for a good README
 Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
 
-## Name
-Choose a self-explaining name for your project.
 
 ## Description
+These are control scripts for the quantum decoder and its derivatives. The function of the full decoder is to take a probability table indicating the probability of each symbol in an alphabet at each of a set of timesteps and find the most likely class of strings. The probability table is provided and comes from a classical convolutional neural network as part of a compound application, where our focus has been on a speech-to-text application. The classes of strings are derived by applying a process to the strings and declaring them equivalent if they have the same output. Concretely, the current process has two steps:
+1. Contract all repetitions within the string down to one symbol,
+2. Remove all _null_ characters.
+
+To find the probabilities of each string class the decoder finds the probabilities of each string and adds them. 
 Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 
 ## Badges
