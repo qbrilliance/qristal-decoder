@@ -3,7 +3,7 @@
 
 ## Description
 These are control scripts for the quantum decoder and its variants. 
-The function of the decoder is to take a probability table indicating the probability of each symbol in an alphabet at each of a set of timesteps and find the most likely intended output. 
+The function of the decoder is to take a probability table, indicating the probability of each symbol in an alphabet at each of a set of timesteps, and find the most likely intended output. 
 The probability table is provided and comes from a classical convolutional neural network as part of a compound application, where our focus has been on a speech-to-text application. The intended outputs are not the strings naively found from the probability table but require a two-step process:
 1. Contract all repetitions within the string down to one symbol,
 2. Remove all _null_ characters.
