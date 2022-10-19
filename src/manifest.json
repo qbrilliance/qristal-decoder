@@ -1,0 +1,6 @@
+{
+  "bundle.symbolic_name" : "qbos_algorithm_quantum_decoder",
+  "bundle.activator" : true,
+  "bundle.name" : "qbOS Quantum Decoder Algorithm",
+  "bundle.description" : "Implement Quantum Decoder Algorithm"
+}
