@@ -34,6 +34,15 @@ project(qbdecoder
   DESCRIPTION "Quantum Brilliance Decoder"
   LANGUAGES C CXX)
 
+# Set default installation dir to the build dir
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT DEFINED CMAKE_INSTALL_PREFIX)
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "..." FORCE)
+endif()
+message("-- Installation directory set to ${CMAKE_INSTALL_PREFIX}.")
+
+# Set default RPATH to the lib dir of the installation dir
+set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "..." FORCE)
+
 # Include CPM for managing dependencies, and set it up to cache them in the deps folder
 set(CPM_DOWNLOAD_VERSION 0.36.0)
 set(CPM_SOURCE_CACHE "${PROJECT_SOURCE_DIR}/deps")
@@ -58,20 +67,11 @@ CPMAddPackage(
 # Add the core library's cmake routines to the module path, and import some
 set(CMAKE_MODULE_PATH ${core_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 include(base_config)
-include(add_dependency)
 include(add_xacc_plugin)
+include(add_gtest)
 
 # Find XACC, using the path successfully validated by the core routines.
 find_package(XACC REQUIRED)
-
-# CMake Util to add C++ gtest
-macro(add_gtest _TEST_NAME)
-  link_directories(${XACC_DIR}/lib)
-  include_directories(${XACC_DIR}/include/gtest)
-  add_executable(${_TEST_NAME}Tester ${_TEST_NAME}Tester.cpp)
-  add_test(NAME qb_${_TEST_NAME}Tester COMMAND ${_TEST_NAME}Tester)
-  target_link_libraries(${_TEST_NAME}Tester gtest gtest_main)
-endmacro()
 
 # Build decoder plugin
 add_xacc_plugin(decoder
@@ -86,5 +86,5 @@ add_xacc_plugin(decoder
     include/simplified_decoder.hpp
 )
 
-# Build tests directory
-add_subdirectory(tests)
+# Add test
+add_gtest(QuantumDecoderAlgorithm)
