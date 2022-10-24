@@ -1,5 +1,5 @@
 # Copyright 2022 Quantum Brilliance
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 # Time of running cmake
 string(TIMESTAMP TODAY)
