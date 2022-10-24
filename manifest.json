@@ -1,6 +1,0 @@
-{
-  "bundle.symbolic_name" : "qbos_algorithm_simplified_decoder",
-  "bundle.activator" : true,
-  "bundle.name" : "qbOS Simplified Decoder Algorithm",
-  "bundle.description" : "Implement Simplified Decoder Algorithm"
-}

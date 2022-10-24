@@ -1,9 +1,11 @@
 // Copyright (c) 2022 Quantum Brilliance Pty Ltd
 #include "simplified_decoder.hpp"
-#include "../../qbos_circuit_builders/ry_encoding.hpp"
+#include "qb/core/circuit_builders/ry_encoding.hpp"
+
 #include "Algorithm.hpp"
 #include "xacc.hpp"
 #include "xacc_service.hpp"
+
 #include <assert.h>
 #include <bitset>
 #include <iomanip>
@@ -46,7 +48,7 @@ bool SimplifiedDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
   method = "ry";
   if (parameters.keyExists<std::string>("method")) {
       method = parameters.get<std::string>("method");
-      // Assert that given builder_name is acceptable and 
+      // Assert that given builder_name is acceptable and
   }
 
   /*
@@ -82,7 +84,7 @@ bool SimplifiedDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
   */
 
   //////////////////////////////////////////////////////////////////////////////////////
-  
+
   //Initialize qpu accelerator
   qpu_ = nullptr;
   if (parameters.stringExists("qpu")) {
@@ -98,12 +100,12 @@ bool SimplifiedDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
     // Default to qpp if none provided
     qpu_ = qpp.get();
   }
-  
+
 
   return true;
 } //SimplifiedDecoder::initialize
 
-/////////////////////////////////////////////////////////////////////////////////////////////  
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 const std::vector<std::string> SimplifiedDecoder::requiredParameters() const {
   return {"probability_table", "qubits_string"};
@@ -182,7 +184,7 @@ void SimplifiedDecoder::execute(
   /////////////////////////////////////////////////////////////////////////////////////////////
 
   //Initiate kernel function
-  const std::function<std::string(std::string)> f_kernel_ = [&](std::string string_) { 
+  const std::function<std::string(std::string)> f_kernel_ = [&](std::string string_) {
       std::string no_repeats_;
       std::string beam_;
       std::string null_char_ ;
@@ -195,7 +197,7 @@ void SimplifiedDecoder::execute(
               null_char_ = std::bitset<2>(0).to_string();
               break;
       }
-      
+
       // Contract repeats in string_
       std::string current_char_ = string_.substr(0,nq_symbol);
       int current_place_ = 0;  // Last new symbol
@@ -229,10 +231,10 @@ void SimplifiedDecoder::execute(
           }
       }
       std::cout << "final  beam:" << beam_ << std::endl;
-      
+
       return beam_; };
 
-  
+
   /////////////////////////////////////////////////////////////////////////////////////////////
 } // SimplifiedDecoder::execute
 } // namespace qbOS

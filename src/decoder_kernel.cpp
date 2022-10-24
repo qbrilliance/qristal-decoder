@@ -1,9 +1,12 @@
 #include "decoder_kernel.hpp"
-#include <CompositeInstruction.hpp>
-#include <Instruction.hpp>
-#include <memory>
+#include "qb/core/circuit_builder.hpp"
+
+#include "CompositeInstruction.hpp"
+#include "Instruction.hpp"
 #include "xacc.hpp"
-#include "qbos_circuit_builder.hpp"
+
+#include <memory>
+
 namespace qbOS {
 
 bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
@@ -147,10 +150,10 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
   int S = qubits_string.size()/L;
   int m = qubits_metric.size()/L;
   for (int i = 0; i < S; i++) {
-	qubits_next_letter.push_back(qubits_ancilla_pool[i]);
+  qubits_next_letter.push_back(qubits_ancilla_pool[i]);
   }
   for (int i = 0; i < m; i++) {
-	qubits_next_metric.push_back(qubits_ancilla_pool[S+i]);
+  qubits_next_metric.push_back(qubits_ancilla_pool[S+i]);
   }
 
   std::vector<int> qubits_total_metric;
@@ -167,7 +170,7 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
 
   auto gateRegistry = xacc::getService<xacc::IRProvider>("quantum");
 
-  /// 
+  ///
   // Take the exponenet of the string total metric register
   ///
 
@@ -327,7 +330,7 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
       {"ae_state_prep_circ", metric_state_prep},
       {"state_qubits", state_qubits},
       {"qubits_ancilla", qubits_ancilla},
-      {"qubits_ancilla_aetm", ancilla}, 
+      {"qubits_ancilla_aetm", ancilla},
       {"qubits_beam_metric", qubits_beam_metric}};
   const bool expand_ok_add = add_metrics->expand(options_adder);
   assert(expand_ok_add);
