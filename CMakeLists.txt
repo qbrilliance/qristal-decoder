@@ -1,33 +1,28 @@
 # Copyright 2022 Quantum Brilliance
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-# Include CPM for managing dependencies, and set it up to cache them in the deps folder
-set(CPM_DOWNLOAD_VERSION 0.36.0)
-set(CPM_SOURCE_CACHE "${CMAKE_CURRENT_LIST_DIR}/deps")
-set(CPM_DOWNLOAD_LOCATION "${CPM_SOURCE_CACHE}/cpm/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
-if(NOT (EXISTS ${CPM_DOWNLOAD_LOCATION}))
-  message(STATUS "Downloading CPM.cmake to ${CPM_DOWNLOAD_LOCATION}")
-  file(DOWNLOAD
-       https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake
-       ${CPM_DOWNLOAD_LOCATION}
-  )
+# Pre-retrieve core cmake dependency routines, for bootstrapping up to the full package.
+set(CORE_TAG main)
+file(DOWNLOAD https://gitlab.com/api/v4/projects/39963594/repository/files/cmake%2Fadd_dependency%2Ecmake/raw?ref=${CORE_TAG}
+     ${CMAKE_CURRENT_LIST_DIR}/deps/add_dependency.cmake
+     HTTPHEADER "PRIVATE-TOKEN: $ENV{GITLAB_PRIVATE_TOKEN}"
+     STATUS STATUS_LIST)
+list(POP_FRONT STATUS_LIST STATUS_LIST0)
+if(STATUS_LIST0)
+  message(FATAL_ERROR "Failed to download core. Please set environment variable GITLAB_PRIVATE_TOKEN.")
 endif()
-include(${CPM_DOWNLOAD_LOCATION})
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/deps ${CMAKE_MODULE_PATH})
+include(add_dependency)
 
-# Set default installation dir to the build dir
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "Installation path." FORCE)
-endif()
-
-# Get the core library
-CPMAddPackage(
-  NAME core
-  GIT_TAG main      # Temporary (for rapid dev).
+# Load the core
+add_dependency(core 0
+  GIT_TAG ${CORE_TAG}
   GIT_SHALLOW False # Temporary (for rapid dev).
   GITLAB_REPOSITORY qbau/software-and-apps/core
 )
+check_missing()
 
-# Add the core library's cmake routines to the module path, and import some
+# Import other core cmake routines
 set(CMAKE_MODULE_PATH ${core_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 include(base_config)
 include(add_xacc_plugin)
