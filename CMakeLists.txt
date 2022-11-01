@@ -22,18 +22,18 @@ add_dependency(core 0
 )
 check_missing()
 
-# Project
-project(decoder
-  VERSION ${PROJECT_VERSION}
-  DESCRIPTION "Quantum Brilliance Decoder"
-  LANGUAGES C CXX)
-
 # Import other core cmake routines
 set(CMAKE_MODULE_PATH ${core_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 include(base_config)
 include(add_xacc_plugin)
 include(add_poorly_behaved_dependency)
 include(add_gtest)
+
+# Project
+project(decoder
+  VERSION ${PROJECT_VERSION}
+  DESCRIPTION "Quantum Brilliance Decoder"
+  LANGUAGES C CXX)
 
 # Print out the installation directory.
 message(STATUS "Installation directory for ${CMAKE_PROJECT_NAME} set to ${CMAKE_INSTALL_PREFIX}.")
