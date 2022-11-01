@@ -1,6 +1,7 @@
 // Copyright (c) 2022 Quantum Brilliance Pty Ltd
 #pragma once
 #include "Algorithm.hpp"
+#include "ry_encoding.hpp"
 #include "IRProvider.hpp"
 #include "InstructionIterator.hpp"
 #include "xacc.hpp"
