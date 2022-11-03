@@ -1,5 +1,6 @@
 // Copyright (c) 2022 Quantum Brilliance Pty Ltd
 #include "quantum_decoder.hpp"
+#include "decoder_kernel.hpp"
 #include "Algorithm.hpp"
 #include "xacc.hpp"
 #include "xacc_service.hpp"
@@ -303,10 +304,10 @@ void QuantumDecoder::execute(
     /////////////////////////////////////////////////////////////////////////////////////////////
 
     // Now we apply the decoder kernel to form beam equivalence classes
-    auto decoder_kernel =
-    std::dynamic_pointer_cast<xacc::CompositeInstruction>(
-        xacc::getService<xacc::Instruction>("DecoderKernel"));
-    bool expand_ok = decoder_kernel->expand({
+    auto decoder_kernel = DecoderKernel();
+    //std::dynamic_pointer_cast<xacc::CompositeInstruction>(
+        //xacc::getService<xacc::Instruction>("DecoderKernel"));
+    bool expand_ok = decoder_kernel.expand({
             {"qubits_string", qubits_string},
             {"qubits_metric", qubits_metric},
             {"qubits_ancilla_adder", qubits_ancilla_adder},
@@ -320,7 +321,7 @@ void QuantumDecoder::execute(
             {"evaluation_bits", evaluation_bits},//CAN USE SOME OF qubits_ancilla_pool?
             {"precision_bits", precision_bits}});
     assert(expand_ok);
-    state_prep->addInstructions(decoder_kernel->getInstructions());
+    state_prep->addInstructions(decoder_kernel.getInstructions());
     return state_prep;
   };
   auto state_prep_circ = state_prep_(qubits_string, qubits_metric, qubits_next_letter,
