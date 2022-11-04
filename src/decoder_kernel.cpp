@@ -1,17 +1,12 @@
 #include "decoder_kernel.hpp"
-#include "qb/core/circuit_builder.hpp"
-
-#include "CompositeInstruction.hpp"
-#include "Instruction.hpp"
-#include "xacc.hpp"
-
+#include <CompositeInstruction.hpp>
+#include <Instruction.hpp>
 #include <memory>
-
+#include "xacc.hpp"
+#include "qbos_circuit_builder.hpp"
 namespace qbOS {
 
 bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
-
-    std::cout << "kernel.expand()" << std::endl;
 
   ////////////////////////////////////////////////////////
   // Define helper functions
@@ -85,11 +80,11 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
   std::vector<int> qubits_metric =
       runtimeOptions.get<std::vector<int>>("qubits_metric");
 
-  if (!runtimeOptions.keyExists<std::vector<int>>("qubits_ancilla_adder")) {
+  if (!runtimeOptions.keyExists<std::vector<int>>("qubits_total_metric_buffer")) {
     return false;
   }
-  std::vector<int> qubits_ancilla_adder =
-      runtimeOptions.get<std::vector<int>>("qubits_ancilla_adder");
+  std::vector<int> qubits_total_metric_buffer =
+      runtimeOptions.get<std::vector<int>>("qubits_total_metric_buffer");
 
   if (!runtimeOptions.keyExists<std::vector<int>>("qubits_init_null")) {
     return false;
@@ -121,22 +116,7 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
   std::vector<int> qubits_ancilla_pool =
       runtimeOptions.get<std::vector<int>>("qubits_ancilla_pool");
 
-  if (!runtimeOptions.keyExists<std::vector<int>>("total_metric")) {
-    return false;
-  }
-  std::vector<int> total_metric = runtimeOptions.get<std::vector<int>>("total_metric");
-
-  if (!runtimeOptions.keyExists<std::vector<int>>("evaluation_bits")) {
-    return false;
-  }
-  std::vector<int> evaluation_bits = runtimeOptions.get<std::vector<int>>("evaluation_bits");
-
-  if (!runtimeOptions.keyExists<std::vector<int>>("precision_bits")) {
-    return false;
-  }
-  std::vector<int> precision_bits = runtimeOptions.get<std::vector<int>>("precision_bits");
-
-  std::vector<int> total_metric_exponent;
+ std::vector<int> total_metric_exponent;
   if (runtimeOptions.keyExists<std::vector<int>>("total_metric_exponent")) {
       total_metric_exponent = runtimeOptions.get<std::vector<int>>("total_metric_exponenet");
   }
@@ -146,35 +126,25 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
   }
   auto metric_state_prep = runtimeOptions.getPointerLike<xacc::CompositeInstruction>("metric_state_prep");
 
-  std::cout << "runtimeOPtions" << std::endl;
-
-  std::vector<int> qubits_next_letter; // S
-  std::vector<int> qubits_next_metric; // m
   int L = qubits_init_null.size();
   int S = qubits_string.size()/L;
-  int m = qubits_metric.size()/L;
-  for (int i = 0; i < S; i++) {
-  qubits_next_letter.push_back(qubits_ancilla_pool[i]);
-  }
-  for (int i = 0; i < m; i++) {
-  qubits_next_metric.push_back(qubits_ancilla_pool[S+i]);
-  }
+  int ml = qubits_metric.size()/L;
 
   std::vector<int> qubits_total_metric;
-  for (int i = 0; i < m; i++) {
+  for (int i = 0; i < ml; i++) {
     qubits_total_metric.push_back(qubits_metric[i]);
   }
-  for (int i = 0; i < qubits_ancilla_adder.size(); i++) {
-    qubits_total_metric.push_back(qubits_ancilla_adder[i]);
+  for (int i = 0; i < qubits_total_metric_buffer.size(); i++) {
+    qubits_total_metric.push_back(qubits_total_metric_buffer[i]);
   }
 
   ////////////////////////////////////////////////////////
-  std::cout << "Add instructions" << std::endl;
+  // Add instructions
   ////////////////////////////////////////////////////////
 
   auto gateRegistry = xacc::getService<xacc::IRProvider>("quantum");
 
-  ///
+  /// 
   // Take the exponenet of the string total metric register
   ///
 
@@ -192,21 +162,19 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
   // Form equivalence classes
   ///
 
-  int q0 = qubits_ancilla_pool[0];
-  int q1 = qubits_ancilla_pool[1];
-  int q2 = qubits_ancilla_pool[2];
-
   // flag superfluous symbols and mark for swap
 
   for (int i = L - 1; i >= 0; i--) {
     std::vector<int> letter;
-    for (int j = 0; j < qubits_next_letter.size(); j++) {
-      letter.push_back(qubits_string[i * (int)qubits_next_letter.size() + j]);
+    for (int j = 0; j < S; j++) {
+      letter.push_back(qubits_string[i * S + j]);
     }
 
     // flag last symbol if it is null or repeat
     if (i == L - 1) {
       addInstruction(
+          gateRegistry->createInstruction("X", qubits_superfluous_flags[i]));
+      metric_state_prep->addInstruction(
           gateRegistry->createInstruction("X", qubits_superfluous_flags[i]));
       auto untoffoli = std::dynamic_pointer_cast<xacc::CompositeInstruction>(
           xacc::getService<xacc::Instruction>("GeneralisedMCX"));
@@ -215,8 +183,8 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
       off.push_back(qubits_init_repeat[i]);
       untoffoli->expand(
           {{"controls_off", off}, {"target", qubits_superfluous_flags[i]}});
-      addInstructions(untoffoli->getInstructions());
-      metric_state_prep->addInstructions(untoffoli->getInstructions());
+      addInstruction(untoffoli);
+      metric_state_prep->addInstruction(untoffoli);
     }
 
     // loop from second last symbol to first symbol
@@ -233,8 +201,8 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
       off.push_back(qubits_init_repeat[i]);
       untoffoli->expand(
           {{"controls_off", off}, {"target", qubits_superfluous_flags[i]}});
-      addInstructions(untoffoli->getInstructions());
-      metric_state_prep->addInstructions(untoffoli->getInstructions());
+      addInstruction(untoffoli);
+      metric_state_prep->addInstruction(untoffoli);
 
       // flip control-swap qubit according to whether that symbol is a repeat or
       // a null
@@ -253,13 +221,13 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
         std::vector<int> current_flag = {qubits_superfluous_flags[j]};
         std::vector<int> next_flag = {qubits_superfluous_flags[j + 1]};
 
-        for (int k = 0; k < qubits_next_letter.size(); k++) {
+        for (int k = 0; k < S; k++) {
           current_letter.push_back(
-              qubits_string[j * qubits_next_letter.size() + k]);
+              qubits_string[j * S + k]);
         }
-        for (int k = 0; k < qubits_next_letter.size(); k++) {
+        for (int k = 0; k < S; k++) {
           next_letter.push_back(
-              qubits_string[(j + 1) * qubits_next_letter.size() + k]);
+              qubits_string[(j + 1) * S + k]);
         }
 
         // swap flagged symbol (swap conditional on control-swap) with next one
@@ -272,8 +240,8 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
                                               {"flags_on", flags_on}};
         const bool expand_ok_letter = c_swap_letter->expand(options_letter);
         assert(expand_ok_letter);
-        addInstructions(c_swap_letter->getInstructions());
-        metric_state_prep->addInstructions(c_swap_letter->getInstructions());
+        addInstruction(c_swap_letter);
+        metric_state_prep->addInstruction(c_swap_letter);
 
         // swap superfluous flag (swap conditional on control-swap) with next
         // one
@@ -285,8 +253,8 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
                                             {"flags_on", flags_on}};
         const bool expand_ok_flag = c_swap_flag->expand(options_flag);
         assert(expand_ok_flag);
-        addInstructions(c_swap_flag->getInstructions());
-        metric_state_prep->addInstructions(c_swap_flag->getInstructions());
+        addInstruction(c_swap_flag);
+        metric_state_prep->addInstruction(c_swap_flag);
       }
 
       // flip control-swap qubit back according to whether that symbol is a
@@ -300,52 +268,44 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
       off2.push_back(qubits_init_repeat[i]);
       untoffoli2->expand(
           {{"controls_off", off2}, {"target", qubit_control_swap}});
-      addInstructions(untoffoli2->getInstructions());
-      metric_state_prep->addInstructions(untoffoli2->getInstructions());
+      addInstruction(untoffoli2);
+      metric_state_prep->addInstruction(untoffoli2);
     }
   }
 
-  std::cout << "state_qubits" << std::endl;
+  int q0 = qubits_ancilla_pool[0];
+  int q1 = qubits_ancilla_pool[1];
+  int q2 = qubits_ancilla_pool[2];
 
-  auto temp = xacc::as_shared_ptr(metric_state_prep);
-  auto state_qubits_set = qbOS::uniqueBitsQD(temp);
-  std::vector<int> state_qubits;
-  for (int bit : state_qubits_set) {
-    state_qubits.push_back(bit);
+  std::shared_ptr<xacc::CompositeInstruction> sp_c =
+      xacc::ir::asComposite(metric_state_prep->clone());
+  auto state_prep_set = qbOS::uniqueBitsQD(sp_c);
+  std::vector<int> sp_qubits;
+  for (auto bit : state_prep_set) {
+      sp_qubits.push_back(bit);
   }
 
   std::vector<int> qubits_ancilla;
-  for (int i = 0; i < qubits_superfluous_flags.size(); i++) {
-      qubits_ancilla.push_back(qubits_ancilla_pool[3+i]);
+  for (int i = 3; i < qubits_ancilla_pool.size(); i++) {
+    if (std::find(sp_qubits.begin(), sp_qubits.end(), qubits_ancilla_pool[i]) ==
+        sp_qubits.end()) {
+      qubits_ancilla.push_back(qubits_ancilla_pool[i]);
+    }
   }
 
-  std::vector<int> ancilla;
-  for (int i = 0; i < qubits_beam_metric.size(); i++) {
-    ancilla.push_back(qubits_ancilla_pool[3+i+qubits_superfluous_flags.size()]);
-  }
-
-  auto add_metrics = std::dynamic_pointer_cast<xacc::CompositeInstruction>(   //  SuperpositionAdder(); //
+  auto add_metrics = std::dynamic_pointer_cast<xacc::CompositeInstruction>(
       xacc::getService<xacc::Instruction>("SuperpositionAdder"));
-  std::cout << "options_adder" << std::endl;
   xacc::HeterogeneousMap options_adder{
       {"q0", q0}, {"q1", q1}, {"q2", q2},
       {"qubits_flags", qubits_superfluous_flags},
       {"qubits_string", qubits_string},
-      {"qubits_metric", total_metric},
-      {"precision_bits", precision_bits},
-      {"evaluation_qubits", evaluation_bits},
+      {"qubits_metric", qubits_total_metric},
       {"ae_state_prep_circ", metric_state_prep},
-      {"state_qubits", state_qubits},
       {"qubits_ancilla", qubits_ancilla},
-      {"qubits_ancilla_aetm", ancilla},
       {"qubits_beam_metric", qubits_beam_metric}};
-  std::cout << "add_metrics" << std::endl;
   const bool expand_ok_add = add_metrics->expand(options_adder);
-  //std::cout <<  << std::endl;
-  std::cout << "expand_ok_add:" << expand_ok_add << std::endl;
   assert(expand_ok_add);
-  addInstructions(add_metrics->getInstructions());
-
+  addInstruction(add_metrics);
   return true;
 }
 

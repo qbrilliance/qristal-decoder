@@ -1,6 +1,5 @@
 // Copyright (c) 2022 Quantum Brilliance Pty Ltd
 #include "quantum_decoder.hpp"
-#include "decoder_kernel.hpp"
 #include "Algorithm.hpp"
 #include "xacc.hpp"
 #include "xacc_service.hpp"
@@ -22,6 +21,9 @@ bool QuantumDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
         parameters.get<std::vector<std::vector<float>>>("probability_table");
   }
 
+  int num_timesteps = probability_table.size();
+  int alphabet_size = probability_table[0].size();
+
   //////////////////////////////////////////////////////////////////////////////////////
 
   //U prime unitary parameters
@@ -29,11 +31,14 @@ bool QuantumDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
   if (parameters.keyExists<std::vector<int>>("qubits_metric")) {
     qubits_metric = parameters.get<std::vector<int>>("qubits_metric");
   }
+  int metric_letter_precision = (int)qubits_metric.size() / num_timesteps;
 
   qubits_string = {};
   if (parameters.keyExists<std::vector<int>>("qubits_string")) {
     qubits_string = parameters.get<std::vector<int>>("qubits_string");
   }
+  int num_qubits_per_letter = (int)qubits_string.size() / num_timesteps;
+  assert(num_qubits_per_letter >= std::log2((float)alphabet_size));
 
   //////////////////////////////////////////////////////////////////////////////////////
 
@@ -44,14 +49,15 @@ bool QuantumDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
   if (parameters.keyExists<std::vector<int>>("qubits_best_score")) {
     qubits_best_score = parameters.get<std::vector<int>>("qubits_best_score");
   }
+  int metric_beam_precision = qubits_best_score.size();
 
   //////////////////////////////////////////////////////////////////////////////////////
 
   //Parameters for adder
-  qubits_ancilla_adder = {};
-  if (parameters.keyExists<std::vector<int>>("qubits_ancilla_adder")) {
-    qubits_ancilla_adder =
-        parameters.get<std::vector<int>>("qubits_ancilla_adder");
+  qubits_total_metric_buffer = {};
+  if (parameters.keyExists<std::vector<int>>("qubits_total_metric_buffer")) {
+    qubits_total_metric_buffer =
+        parameters.get<std::vector<int>>("qubits_total_metric_buffer");
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -66,21 +72,13 @@ bool QuantumDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
     return false;
   }
   qubits_init_null = parameters.get<std::vector<int>>("qubits_init_null");
+  assert((int)qubits_init_null.size() == num_timesteps);
 
   if (!parameters.keyExists<std::vector<int>>("qubits_init_repeat")) {
     return false;
   }
   qubits_init_repeat = parameters.get<std::vector<int>>("qubits_init_repeat");
-
-  if (!parameters.keyExists<std::vector<int>>("evaluation_bits")) {
-    return false;
-  }
-  evaluation_bits = parameters.get<std::vector<int>>("evaluation_bits");
-
-  if (!parameters.keyExists<std::vector<int>>("precision_bits")) {
-    return false;
-  }
-  precision_bits = parameters.get<std::vector<int>>("precision_bits");
+  assert((int)qubits_init_repeat.size() == num_timesteps);
 
   qubits_ancilla_pool = {};
   if (parameters.keyExists<std::vector<int>>("qubits_ancilla_pool"))
@@ -93,18 +91,14 @@ bool QuantumDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
     return false;
   }
   qubits_superfluous_flags = parameters.get<std::vector<int>>("qubits_superfluous_flags");
-
-  if (!parameters.keyExists<std::vector<int>>("qubits_total_metric_copy"))
-  {
-    return false;
-  }
-  qubits_total_metric_copy = parameters.get<std::vector<int>>("qubits_total_metric_copy");
+  assert((int)qubits_superfluous_flags.size() == num_timesteps);
 
   qubits_beam_metric = {};
   if (parameters.keyExists<std::vector<int>>("qubits_beam_metric"))
   {
     qubits_beam_metric = parameters.get<std::vector<int>>("qubits_beam_metric");
   }
+  assert((int)qubits_beam_metric.size() == metric_beam_precision);
 
   //////////////////////////////////////////////////////////////////////////////////////
 
@@ -132,8 +126,8 @@ bool QuantumDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
 const std::vector<std::string> QuantumDecoder::requiredParameters() const {
   return {"probability_table", "iteration", "qubits_metric", "qubits_string",
           "method", "BestScore", "qubits_beam_metric", "qubits_superfluous_flags",
-          "num_scoring_qubits", "qubits_init_null", "qubits_init_repeat",
-          "qubits_best_score", "qubits_ancilla_oracle", "N_TRIALS"};
+          "qubits_init_null", "qubits_init_repeat",
+          "qubits_best_score", "qubits_ancilla_pool", "N_TRIALS"};
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -145,25 +139,29 @@ void QuantumDecoder::execute(
   // qubits_next_letter and qubits_next_metric required at the same time
   std::vector<int> qubits_next_letter; // S
   std::vector<int> qubits_next_metric; // m
-  int L = qubits_init_null.size();
+  int L = probability_table.size();
   int S = qubits_string.size()/L;
-  int m = qubits_metric.size()/L;
-  int k = std::round(0.5 + std::log2(1 + L*(std::pow(2,m) - 1))); // number of qubits in total_metric
-  int k2 = k*(k+1)/2; // number of precision qubits needed for ae
-  int k3 = k + L; // number of qubits needed for qubits_beam_metric
+  int ml = qubits_metric.size()/L; // letter metric precision
+  int ms = std::round(0.49999 + std::log2(1 + L*(std::pow(2,ml) - 1))); // string metric precision
+  int p = ms*(ms+1)/2; // number of precision qubits needed for ae for metrics
+  int mb = std::round(0.49999 + std::log2(1 + std::pow((int)probability_table[0].size(), L)*(std::pow(2,ms) - 1))); // beam metric precision
 
+  std::cout << "Welcome to the Quantum Decoder!\n";
+  std::cout << "----------------------------------------------------------------\n";
+  std::cout << "Finding the most likely beam for string length " << L << "and " << probability_table[0].size() << " symbols.\n";
+  std::cout << "----------------------------------------------------------------\n";
+
+  int required_num_ancilla = std::max({ml+S, ms-ml, 4+5*ms+2*p+ms+S+L*S+L, 4+p+mb+2*ms+L*S+L});
+  if (qubits_ancilla_pool.size() < required_num_ancilla) {
+      xacc::error("Not enough ancilla provided.");
+  }
+
+  std::cout << "Beginning decoder algorithm.\n";
   for (int i = 0; i < S; i++) {
 	qubits_next_letter.push_back(qubits_ancilla_pool[i]);
   }
-  for (int i = 0; i < m; i++) {
+  for (int i = 0; i < ml; i++) {
 	qubits_next_metric.push_back(qubits_ancilla_pool[S+i]);
-  }
-
-  // qubit_flag and qubits_ancilla_oracle required at the same time
-  int qubit_flag = qubits_ancilla_pool[0];
-  std::vector<int> qubits_ancilla_oracle; // 3k2 - 1
-  for (int i = 0; i < 3*k3-1; i++) {
-	qubits_ancilla_oracle.push_back(qubits_ancilla_pool[1+i]);
   }
 
   // Take the logarithm of the probability table
@@ -180,206 +178,223 @@ void QuantumDecoder::execute(
 
   //State preparation: Prepare initial state using unitaries for the exponential search.
   std::function<std::shared_ptr<xacc::CompositeInstruction>(
-    std::vector<int>, std::vector<int>, std::vector<int>,
-    std::vector<int>, std::vector<int>)>
-    state_prep_ = [&](std::vector<int> qubits_string, std::vector<int> qubits_metric,
-                      std::vector<int> qubits_next_letter, std::vector<int> qubits_next_metric ,
-                      std::vector<int> qubits_ancilla_adder) {
+      std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int>,
+      std::vector<int>)>
+      state_prep_ = [&](std::vector<int> qubits_string,
+                        std::vector<int> qubits_metric,
+                        std::vector<int> qubits_next_letter,
+                        std::vector<int> qubits_next_metric,
+                        std::vector<int> qubits_total_metric_buffer) {
+        // Initialize state preparation circuit
+        auto gateRegistry = xacc::getService<xacc::IRProvider>("quantum");
+        auto state_prep = gateRegistry->createComposite("state_prep");
 
-    //Initialize state preparation circuit
-    auto gateRegistry = xacc::getService<xacc::IRProvider>("quantum");
-    auto state_prep = gateRegistry->createComposite("state_prep");
+        /////////////////////////////////////////////////////////////////////////////////////////////
 
-    /////////////////////////////////////////////////////////////////////////////////////////////
+        // Loop over rows of the probability table (i.e. over string length)
+        for (int it = 0; it < iteration; it++) {
+          // Initialize W prime unitary
+          auto w_prime = std::dynamic_pointer_cast<xacc::CompositeInstruction>(
+              xacc::getService<xacc::Instruction>("WPrime"));
 
-    //Loop over rows of the probability table (i.e. over string length)
-    for (int it = 0; it < iteration; it++) {
-      //Initialize W prime unitary
-      auto w_prime = std::dynamic_pointer_cast<xacc::CompositeInstruction>(xacc::getService<xacc::Instruction>("WPrime"));
+          // Merge qubit register for W prime unitary into a heterogenous map
+          xacc::HeterogeneousMap w_map = {
+              {"iteration", it},
+              {"qubits_next_letter", qubits_next_letter},
+              {"qubits_next_metric", qubits_next_metric},
+              {"probability_table", probability_table},
+              {"qubits_init_null", qubits_init_null},
+              {"flag_integer", 0}};
 
-      //Merge qubit register for W prime unitary into a heterogenous map
-      xacc::HeterogeneousMap w_map = {{"iteration", it},
-                                      {"qubits_next_letter", qubits_next_letter},
-                                      {"qubits_next_metric", qubits_next_metric},
-                                      {"probability_table", probability_table},
-                                      {"qubits_init_null", qubits_init_null},
-                                      {"flag_integer", 0}};
+          // Add qubit register to W prime
+          w_prime->expand(w_map);
 
-      //Add qubit register to W prime
-      w_prime->expand(w_map);
+          // Add W prime unitary to state preparation circuit
+          state_prep->addInstruction(w_prime);
 
-      //Add W prime unitary to state preparation circuit
-      state_prep->addInstructions(w_prime->getInstructions());
+          /////////////////////////////////////////////////////////////////////////////////////////////
 
-      /////////////////////////////////////////////////////////////////////////////////////////////
+          // Initialize repetition flags
+          if (it > 0) {
+            auto init_repeat =
+                std::dynamic_pointer_cast<xacc::CompositeInstruction>(
+                    xacc::getService<xacc::Instruction>("InitRepeatFlag"));
+            xacc::HeterogeneousMap rep_map = {
+                {"iteration", it},
+                {"qubits_string", qubits_string},
+                {"qubits_next_letter", qubits_next_letter},
+                {"qubits_init_repeat", qubits_init_repeat}};
+            init_repeat->expand(rep_map);
+            // Add marking of repeat symbols to state preparation circuit
+            state_prep->addInstruction(init_repeat);
+          }
 
-      // Initialize repetition flags
-      if (it > 0) {
-        auto init_repeat =
-            std::dynamic_pointer_cast<xacc::CompositeInstruction>(
-                xacc::getService<xacc::Instruction>("InitRepeatFlag"));
-        xacc::HeterogeneousMap rep_map = {
-            {"iteration", it},
-            {"qubits_string", qubits_string},
-            {"qubits_next_letter", qubits_next_letter},
-            {"qubits_init_repeat", qubits_init_repeat}};
-        init_repeat->expand(rep_map);
-        // Add marking of repeat symbols to state preparation circuit
-        state_prep->addInstructions(init_repeat->getInstructions());
-      }
+          /////////////////////////////////////////////////////////////////////////////////////////////
 
-      /////////////////////////////////////////////////////////////////////////////////////////////
+          // Initialize U prime unitary
+          auto u_prime = std::dynamic_pointer_cast<xacc::CompositeInstruction>(
+              xacc::getService<xacc::Instruction>("UPrime"));
 
-      //Initialize U prime unitary
-      auto u_prime = std::dynamic_pointer_cast<xacc::CompositeInstruction>(xacc::getService<xacc::Instruction>("UPrime"));
+          // Merge qubit register for U prime unitary into a heterogenous map
+          xacc::HeterogeneousMap u_map = {
+              {"iteration", it},
+              {"qubits_next_letter", qubits_next_letter},
+              {"qubits_next_metric", qubits_next_metric},
+              {"qubits_string", qubits_string},
+              {"qubits_metric", qubits_metric}};
 
-      //Merge qubit register for U prime unitary into a heterogenous map
-      xacc::HeterogeneousMap u_map = {{"iteration", it},
-                                      {"qubits_next_letter", qubits_next_letter},
-                                      {"qubits_next_metric", qubits_next_metric},
-                                      {"qubits_string", qubits_string},
-                                      {"qubits_metric", qubits_metric}};
+          // Add qubit register to U prime
+          u_prime->expand(u_map);
 
-      //Add qubit register to U prime
-      u_prime->expand(u_map);
+          // Add U prime unitary to state preparation circuit
+          state_prep->addInstruction(u_prime);
 
-      //Add U prime unitary to state preparation circuit
-      state_prep->addInstructions(u_prime->getInstructions());
+          /////////////////////////////////////////////////////////////////////////////////////////////
 
-      /////////////////////////////////////////////////////////////////////////////////////////////
+          // Initialize Q prime unitary
+          auto q_prime = std::dynamic_pointer_cast<xacc::CompositeInstruction>(
+              xacc::getService<xacc::Instruction>("QPrime"));
 
-      //Initialize Q prime unitary
-      auto q_prime = std::dynamic_pointer_cast<xacc::CompositeInstruction>(xacc::getService<xacc::Instruction>("QPrime"));
+          // Merge qubit register for Q prime unitary into a heterogenous map
+          xacc::HeterogeneousMap q_map = {
+              {"iteration", it},
+              {"qubits_next_letter", qubits_next_letter},
+              {"qubits_next_metric", qubits_next_metric},
+              {"qubits_string", qubits_string},
+              {"qubits_metric", qubits_metric}};
 
-      //Merge qubit register for Q prime unitary into a heterogenous map
-      xacc::HeterogeneousMap q_map = {{"iteration", it},
-                                      {"qubits_next_letter", qubits_next_letter},
-                                      {"qubits_next_metric", qubits_next_metric},
-                                      {"qubits_string", qubits_string},
-                                      {"qubits_metric", qubits_metric}};
+          // Add qubit register to Q prime
+          q_prime->expand(q_map);
 
-      //Add qubit register to Q prime
-      q_prime->expand(q_map);
+          // Add Q prime unitary to state preparation circuit
+          state_prep->addInstruction(q_prime);
+        } // Loop over string length
 
-      //Add Q prime unitary to state preparation circuit
-      state_prep->addInstructions(q_prime->getInstructions());
-    }// Loop over string length
+        /////////////////////////////////////////////////////////////////////////////////////////////
 
-    /////////////////////////////////////////////////////////////////////////////////////////////
+        // The comparator oracle takes in the total metric. Therefore we need to
+        // use an adder to sum up the individual scores and form total metric.
+        int m = qubits_next_metric
+                    .size(); // Size of the qubits_next_metric is constant and
+                             // fixed at the initizalization of the program.
+        int c_in =
+            qubits_ancilla_pool[0]; // qubits_ancilla_adder[0]; //Carry over
+        std::vector<int> total_metric;
 
-    //The comparator oracle takes in the total metric. Therefore we need to use an adder to
-    //sum up the individual scores and form total metric.
-    int m = qubits_next_metric.size(); //Size of the qubits_next_metric is constant and fixed at the initizalization of the program.
-    int c_in = qubits_ancilla_pool[0];//qubits_ancilla_adder[0]; //Carry over
-    std::vector<int> total_metric;
+        // Insert first iteration's qubits into total_metric and use it in the
+        // following for-loop to be summed iteratively with other
+        // qubits_next_metric iterations
+        for (int i = 0; i < m; i++)
+          total_metric.push_back(qubits_metric[i]);
 
-    //Insert first iteration's qubits into total_metric and use it in the following for-loop to be summed iteratively with other qubits_next_metric iterations
-    for (int i = 0; i < m; i++)
-      total_metric.push_back(qubits_metric[i]);
+        for (int i = 0; i < qubits_total_metric_buffer.size();
+             i++) // for (int i = 1; i < qubits_ancilla_adder.size(); i++)
+          total_metric.push_back(qubits_total_metric_buffer[i]);
 
-    for (int i = 0; i < qubits_ancilla_adder.size(); i++)//for (int i = 1; i < qubits_ancilla_adder.size(); i++)
-      total_metric.push_back(qubits_ancilla_adder[i]);
+        for (int it = 1; it < iteration; it++) {
+          std::vector<int> metrics; // Vector to store elements of the metric at
+                                    // each iteration.
+          int start = it * m;
+          int end = (it + 1) * m;
 
-    for (int it = 1; it < iteration; it++){
-      std::vector<int> metrics; //Vector to store elements of the metric at each iteration.
-      int start = it*m;
-      int end = (it+1)*m;
+          for (int i = start; i < end; i++)
+            metrics.push_back(qubits_metric[i]);
 
-      for (int i = start; i < end; i++)
-        metrics.push_back(qubits_metric[i]);
+          for (int i = 0; i < total_metric.size() - 1 - m; i++) {
+            metrics.push_back(
+                qubits_ancilla_pool
+                    [i + 1]); // metrics.push_back(qubits_ancilla_oracle[i]);
+          }
 
-      for (int i = 0; i < total_metric.size()-1-m; i++) {
-        metrics.push_back(qubits_ancilla_pool[i+1]);//metrics.push_back(qubits_ancilla_oracle[i]);
-      }
+          // Use ripple adder to add the qubits_metric at iteration 'it' to the
+          // total metric vector
+          auto adder = std::dynamic_pointer_cast<xacc::CompositeInstruction>(
+              xacc::getService<xacc::Instruction>("RippleCarryAdder"));
+          bool expand_ok = adder->expand({{"adder_bits", metrics},
+                                          {"sum_bits", total_metric},
+                                          {"c_in", c_in}});
+          assert(expand_ok);
 
-      //Use ripple adder to add the qubits_metric at iteration 'it' to the total metric vector
-      auto adder = std::dynamic_pointer_cast<xacc::CompositeInstruction>(xacc::getService<xacc::Instruction>("RippleCarryAdder"));
-      bool expand_ok = adder->expand({{"adder_bits", metrics}, {"sum_bits", total_metric}, {"c_in", c_in}});
-      assert(expand_ok);
+          // Add total metric to state preparation circuit
+          state_prep->addInstruction(adder);
+        }
 
-      //Add total metric to state preparation circuit
-      state_prep->addInstructions(adder->getInstructions());
-    }
+        /////////////////////////////////////////////////////////////////////////////////////////////
 
-    /////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Now we apply the decoder kernel to form beam equivalence classes
-    std::shared_ptr<xacc::CompositeInstruction> state_prep_clone =
+        // Now we apply the decoder kernel to form beam equivalence classes
+        std::shared_ptr<xacc::CompositeInstruction> state_prep_clone =
             xacc::ir::asComposite(state_prep->clone());
 
-    auto decoder_kernel = DecoderKernel();
-    //std::dynamic_pointer_cast<xacc::CompositeInstruction>(
-        //xacc::getService<xacc::Instruction>("DecoderKernel"));
-    bool expand_ok = decoder_kernel.expand(
+        auto decoder_kernel =
+            std::dynamic_pointer_cast<xacc::CompositeInstruction>(
+                xacc::getService<xacc::Instruction>("DecoderKernel"));
+        bool expand_ok = decoder_kernel->expand(
             {{"qubits_string", qubits_string},
              {"qubits_metric", qubits_metric},
-             {"qubits_ancilla_adder", qubits_ancilla_adder},
-             //{"qubits_total_metric_buffer", qubits_total_metric_copy},
+             {"qubits_total_metric_buffer", qubits_total_metric_buffer},
              {"qubits_init_null", qubits_init_null},
              {"qubits_init_repeat", qubits_init_repeat},
              {"qubits_superfluous_flags", qubits_superfluous_flags},
              {"qubits_beam_metric", qubits_beam_metric},
              {"qubits_ancilla_pool", qubits_ancilla_pool},
-             {"total_metric", total_metric},
-             {"evaluation_bits", evaluation_bits},//CAN USE SOME OF qubits_ancilla_pool?
-             {"precision_bits", precision_bits},
              {"metric_state_prep", state_prep_clone}});
-        
-    /*bool expand_ok = decoder_kernel.expand({
-            {"qubits_string", qubits_string},
-            {"qubits_metric", qubits_metric},
-            {"qubits_ancilla_adder", qubits_ancilla_adder},
-            {"qubits_init_null", qubits_init_null},
-            {"qubits_init_repeat", qubits_init_repeat},
-            {"qubits_beam_metric", qubits_beam_metric},
-            {"qubits_superfluous_flags", qubits_superfluous_flags},
-            {"qubits_ancilla_pool", qubits_ancilla_pool},
-            {"total_metric", total_metric},
-            {"total_metric_copy", qubits_total_metric_copy},
-            {"evaluation_bits", evaluation_bits},//CAN USE SOME OF qubits_ancilla_pool?
-            {"precision_bits", precision_bits}});*/
-    std::cout << "expand_ok: " << expand_ok << std::endl;
-    assert(expand_ok);
-    state_prep->addInstructions(decoder_kernel.getInstructions());
-    return state_prep;
-  };
-  auto state_prep_circ = state_prep_(qubits_string, qubits_metric, qubits_next_letter,
-                                     qubits_next_metric, qubits_ancilla_adder);
+        assert(expand_ok);
+        state_prep->addInstruction(decoder_kernel);
+        return state_prep;
+      };
+  auto state_prep_circ =
+      state_prep_(qubits_string, qubits_metric, qubits_next_letter,
+                  qubits_next_metric, qubits_total_metric_buffer);
 
   /////////////////////////////////////////////////////////////////////////////////////////////
 
-  //Comparator oracle
-  std::function<std::shared_ptr<xacc::CompositeInstruction>(
-    int,int,std::vector<int>,int,std::vector<int>,std::vector<int>)>
-    oracle_ = [&](int BestScore, int num_scoring_qubits, std::vector<int> qubits_beam_metric,//std::vector<int> total_metric,
-                  int qubit_flag, std::vector<int> qubits_best_score,
-                  std::vector<int> qubits_ancilla_oracle) {
+  // Comparator oracle
+  std::function<std::shared_ptr<xacc::CompositeInstruction>(int)> oracle_ =
+      [&](int BestScore) {
+        int qubit_flag = qubits_ancilla_pool[0];
+        int c_in = qubits_ancilla_pool[1];
+        int n = qubits_best_score.size();
 
-    //Initialize comparator oracle circuit
-    auto oracle = gateRegistry->createComposite("oracle");
-//    oracle->addInstruction(gateRegistry->createInstruction("X", qubit_flag));
-//    oracle->addInstruction(gateRegistry->createInstruction("H", qubit_flag));
-    auto comp = std::dynamic_pointer_cast<xacc::CompositeInstruction>(
-      xacc::getService<xacc::Instruction>("Comparator"));
+        // Initialize comparator oracle circuit
+        auto oracle = gateRegistry->createComposite("oracle");
 
-    //Create list of input parameters
-    xacc::HeterogeneousMap options{{"BestScore", BestScore},
-                                   {"num_scoring_qubits", (int)qubits_best_score.size()},
-                                   {"qubits_beam_metric",qubits_beam_metric},//{"trial_score_qubits", total_metric},
-                                   {"flag_qubit", qubit_flag},
-                                   {"best_score_qubits", qubits_best_score},
-                                   {"ancilla_qubits", qubits_ancilla_oracle},
-                                   {"as_oracle", true}};
+        // Encode BestScore as a bitstring
+        std::string BestScore_binary =
+            std::bitset<sizeof(BestScore)>(BestScore).to_string();
+        std::string BestScore_binary_n = BestScore_binary.substr(
+            BestScore_binary.size() < n ? 0 : BestScore_binary.size() - n);
 
-    //Add input parameter list to comparator and check if initializing is okay
-    const bool expand_ok = comp->expand(options);
-    assert(expand_ok);
+        // Prepare |BestScore>
+        for (int i = 0; i < n; i++) {
+          if (BestScore_binary_n[i] == '1') {
+            oracle->addInstruction(
+                gateRegistry->createInstruction("X", qubits_best_score[i]));
+          }
+        }
+        // Phase kickback method
+        oracle->addInstruction(
+            gateRegistry->createInstruction("X", qubit_flag));
+        oracle->addInstruction(
+            gateRegistry->createInstruction("H", qubit_flag));
 
-    //Add comparator to oracle circuit 
-    oracle->addInstructions(comp->getInstructions());
-std::cout << "num gates oracle: " << oracle->nInstructions() << "\n";
-    return oracle;
-  };
+        auto comp = std::dynamic_pointer_cast<xacc::CompositeInstruction>(
+            xacc::getService<xacc::Instruction>("CompareGT"));
+        xacc::HeterogeneousMap options{{"qubits_a", qubits_beam_metric},
+                                       {"qubits_b", qubits_best_score},
+                                       {"qubit_flag", qubit_flag},
+                                       {"qubit_ancilla", c_in},
+                                       {"is_LSB", true}};
+        const bool expand_ok = comp->expand(options);
+        assert(expand_ok);
+        oracle->addInstruction(comp);
+
+        oracle->addInstruction(
+            gateRegistry->createInstruction("H", qubit_flag));
+        oracle->addInstruction(
+            gateRegistry->createInstruction("X", qubit_flag));
+
+        return oracle;
+      };
 
   /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -398,53 +413,42 @@ std::cout << "num gates oracle: " << oracle->nInstructions() << "\n";
   // Insert first iteration's qubits into total_metric and use it in the
   // following for loop to be summed iteratively with other qubits_next_metric
   // iteration
-  for (int i = 0; i < m; i++)
+  for (int i = 0; i < ml; i++) {
     total_metric.push_back(qubits_metric[i]);
+  }
 
-  for (int i = 0; i < qubits_ancilla_adder.size();
-       i++) // for (int i = 1; i < qubits_ancilla_adder.size(); i++)
-    total_metric.push_back(qubits_ancilla_adder[i]);
+  for (int i = 0; i < qubits_total_metric_buffer.size(); i++) {
+    total_metric.push_back(qubits_total_metric_buffer[i]);
+  }
 
   /////////////////////////////////////////////////////////////////////////////////////////////
 
   int current_best_score = BestScore;
   int max_best_score = current_best_score;
   std::string best_string;
-  int total_num_qubits = L*(m+3*S+6) + 4*k - m + 2*L + k2 + qubits_ancilla_pool.size();
+  int total_num_qubits = 3*L + 2*mb + ms - ml + S*L + ml*L + qubits_ancilla_pool.size();
 
   std::cout<< "Total number qubits = " << total_num_qubits << "\n";
 
   for (int runCount = 0; runCount < N_TRIALS; ++runCount) {
     std::cout << "Decoder iteration: " << runCount + 1
               << ", initial best score: " << current_best_score << std::endl;
+
+    // for (auto bit : qubits_beam_metric) {
+    //     std::cout << "beam metric bit " << bit << "\n";
+    // }
     auto exp_search_algo = xacc::getAlgorithm(
       "exponential-search", {{"method", "canonical"},
-                             {"state_preparation_circuit", state_prep_circ},//{"state_preparation_circuit", state_prep_},
+                             {"state_preparation_circuit", state_prep_circ},
                              {"oracle_circuit", oracle_},
                              {"best_score", current_best_score},
                              {"f_score", f_score},
-                             {"qubit_flag", qubit_flag},
-                             {"qubits_metric", qubits_metric},
-                             {"qubits_string", qubits_string},
-                             {"qubits_next_letter", qubits_next_letter},
-                             {"qubits_next_metric", qubits_next_metric},
-                             {"qubits_best_score", qubits_best_score},
-                             {"qubits_ancilla_adder", qubits_ancilla_adder},
-                             {"qubits_ancilla_oracle", qubits_ancilla_oracle},
-                             {"qubits_beam_metric", qubits_beam_metric},//{"total_metric", total_metric},
                              {"total_num_qubits", total_num_qubits},
-                             {"qubits_init_null", qubits_init_null},
-                             {"qubits_init_repeat", qubits_init_repeat},
-                             {"qubits_superfluous_flags", qubits_superfluous_flags},
-                             {"evaluation_bits", evaluation_bits},
-                             {"total_metric_copy", qubits_total_metric_copy},
+                             {"qubits_string", qubits_string},
+                             {"total_metric", qubits_beam_metric},
                              {"qpu", qpu_}});
 
-    auto buffer = xacc::qalloc(1 + (int)qubits_string.size() + (int)qubits_total_metric_copy.size() + (int)qubits_metric.size()
-                               + (int)qubits_best_score.size() + (int)qubits_ancilla_adder.size()
-                               + (int)qubits_init_null.size() + (int)qubits_init_repeat.size()
-                               + (int)qubits_superfluous_flags.size() + qubits_beam_metric.size()
-                               + (int)qubits_ancilla_pool.size() +  (int)precision_bits.size());
+    auto buffer = xacc::qalloc(total_num_qubits);
     exp_search_algo->execute(buffer);
     auto info = buffer->getInformation();
     //    std::cout << buffer->toString() << std::endl;

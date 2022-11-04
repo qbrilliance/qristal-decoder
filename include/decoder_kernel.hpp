@@ -1,21 +1,17 @@
 /***
  *** Copyright (c) 2022 Quantum Brilliance Pty Ltd
  ***/
-#pragma once
-
-#include "qb/core/circuits/comparator.hpp"
-
+#pragma once 
 #include "Circuit.hpp"
+#include "comparator.hpp"
 #include "CommonGates.hpp"
 #include "IRProvider.hpp"
 #include "xacc_service.hpp"
-
 #include <algorithm>
 #include <assert.h>
 #include <bitset>
 #include <optional>
 #include <vector>
-
 namespace qbOS {
 
 // Quantum Decoder Kernel Circuit
@@ -30,10 +26,10 @@ namespace qbOS {
 // qubits_init_null: The register of qubits used to mark if a letter is null (one per letter)
 // qubits_init_repeat: The register of qubits used to mark if a letter is a repeat (one per letter)
 // qubits_superfluous_flags: The register of qubits used to mark trailing letters as superfluous (one per letter)
-// qubits_beam_metric: The register of qubits that will contain the final beam metric
+// qubits_beam_metric: The register of qubits that will contain the final beam metric 
 // total_metric: The register of qubits encoding the sum of metrics contained in qubits_metric
 // total_metric_copy: A copy of the total_metric register used for the amplitude estimation adder
-// evaluation_bits: The register of qubits used to store the output of the amplitude estimation
+// evaluation_bits: The register of qubits used to store the output of the amplitude estimation 
 // precision_bits: A list of the number of precision qubits used per metric qubit during amplitude estimation
 // qubits_ancilla_pool: The register of qubits used as ancilla
 

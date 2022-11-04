@@ -41,7 +41,7 @@ private:
   //then they should all be provided. Default register structure:
   //|trial_qubits>|flag_qubit>|qubits_best_score>|qubits_ancilla_oracla>
   std::vector<int> qubits_best_score;
-  std::vector<int> qubits_ancilla_adder;
+  std::vector<int> qubits_total_metric_buffer;
   int N_TRIALS;
 
   //Choose which method to use. Currently supported methods are:
@@ -59,14 +59,11 @@ private:
   std::vector<int> qubits_string;
 
   // Qubit registers for decoder kernel
-  std::vector<int> qubits_total_metric_copy;
   std::vector<int> qubits_init_null;
   std::vector<int> qubits_init_repeat;
   std::vector<int> qubits_superfluous_flags;
   std::vector<int> qubits_ancilla_pool;
   std::vector<int> qubits_beam_metric;
-  std::vector<int> evaluation_bits;
-  std::vector<int> precision_bits;
 
 private:
 public:
