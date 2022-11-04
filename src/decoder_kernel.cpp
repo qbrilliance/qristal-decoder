@@ -11,6 +11,8 @@ namespace qbOS {
 
 bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
 
+    std::cout << "kernel.expand()" << std::endl;
+
   ////////////////////////////////////////////////////////
   // Define helper functions
   ////////////////////////////////////////////////////////
@@ -144,6 +146,8 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
   }
   auto metric_state_prep = runtimeOptions.getPointerLike<xacc::CompositeInstruction>("metric_state_prep");
 
+  std::cout << "runtimeOPtions" << std::endl;
+
   std::vector<int> qubits_next_letter; // S
   std::vector<int> qubits_next_metric; // m
   int L = qubits_init_null.size();
@@ -165,7 +169,7 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
   }
 
   ////////////////////////////////////////////////////////
-  // Add instructions
+  std::cout << "Add instructions" << std::endl;
   ////////////////////////////////////////////////////////
 
   auto gateRegistry = xacc::getService<xacc::IRProvider>("quantum");
@@ -301,6 +305,8 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
     }
   }
 
+  std::cout << "state_qubits" << std::endl;
+
   auto temp = xacc::as_shared_ptr(metric_state_prep);
   auto state_qubits_set = qbOS::uniqueBitsQD(temp);
   std::vector<int> state_qubits;
@@ -318,8 +324,9 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
     ancilla.push_back(qubits_ancilla_pool[3+i+qubits_superfluous_flags.size()]);
   }
 
-  auto add_metrics = std::dynamic_pointer_cast<xacc::CompositeInstruction>(
+  auto add_metrics = std::dynamic_pointer_cast<xacc::CompositeInstruction>(   //  SuperpositionAdder(); //
       xacc::getService<xacc::Instruction>("SuperpositionAdder"));
+  std::cout << "options_adder" << std::endl;
   xacc::HeterogeneousMap options_adder{
       {"q0", q0}, {"q1", q1}, {"q2", q2},
       {"qubits_flags", qubits_superfluous_flags},
@@ -332,7 +339,10 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
       {"qubits_ancilla", qubits_ancilla},
       {"qubits_ancilla_aetm", ancilla},
       {"qubits_beam_metric", qubits_beam_metric}};
+  std::cout << "add_metrics" << std::endl;
   const bool expand_ok_add = add_metrics->expand(options_adder);
+  //std::cout <<  << std::endl;
+  std::cout << "expand_ok_add:" << expand_ok_add << std::endl;
   assert(expand_ok_add);
   addInstructions(add_metrics->getInstructions());
 

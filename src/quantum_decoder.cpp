@@ -304,10 +304,28 @@ void QuantumDecoder::execute(
     /////////////////////////////////////////////////////////////////////////////////////////////
 
     // Now we apply the decoder kernel to form beam equivalence classes
+    std::shared_ptr<xacc::CompositeInstruction> state_prep_clone =
+            xacc::ir::asComposite(state_prep->clone());
+
     auto decoder_kernel = DecoderKernel();
     //std::dynamic_pointer_cast<xacc::CompositeInstruction>(
         //xacc::getService<xacc::Instruction>("DecoderKernel"));
-    bool expand_ok = decoder_kernel.expand({
+    bool expand_ok = decoder_kernel.expand(
+            {{"qubits_string", qubits_string},
+             {"qubits_metric", qubits_metric},
+             {"qubits_ancilla_adder", qubits_ancilla_adder},
+             //{"qubits_total_metric_buffer", qubits_total_metric_copy},
+             {"qubits_init_null", qubits_init_null},
+             {"qubits_init_repeat", qubits_init_repeat},
+             {"qubits_superfluous_flags", qubits_superfluous_flags},
+             {"qubits_beam_metric", qubits_beam_metric},
+             {"qubits_ancilla_pool", qubits_ancilla_pool},
+             {"total_metric", total_metric},
+             {"evaluation_bits", evaluation_bits},//CAN USE SOME OF qubits_ancilla_pool?
+             {"precision_bits", precision_bits},
+             {"metric_state_prep", state_prep_clone}});
+        
+    /*bool expand_ok = decoder_kernel.expand({
             {"qubits_string", qubits_string},
             {"qubits_metric", qubits_metric},
             {"qubits_ancilla_adder", qubits_ancilla_adder},
@@ -319,7 +337,8 @@ void QuantumDecoder::execute(
             {"total_metric", total_metric},
             {"total_metric_copy", qubits_total_metric_copy},
             {"evaluation_bits", evaluation_bits},//CAN USE SOME OF qubits_ancilla_pool?
-            {"precision_bits", precision_bits}});
+            {"precision_bits", precision_bits}});*/
+    std::cout << "expand_ok: " << expand_ok << std::endl;
     assert(expand_ok);
     state_prep->addInstructions(decoder_kernel.getInstructions());
     return state_prep;
