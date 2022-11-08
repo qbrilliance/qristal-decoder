@@ -3,7 +3,7 @@
  ***/
 #pragma once 
 #include "Circuit.hpp"
-#include "comparator.hpp"
+#include "qb/core/circuits/comparator.hpp"
 #include "CommonGates.hpp"
 #include "IRProvider.hpp"
 #include "xacc_service.hpp"

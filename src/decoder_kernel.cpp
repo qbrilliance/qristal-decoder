@@ -3,7 +3,7 @@
 #include <Instruction.hpp>
 #include <memory>
 #include "xacc.hpp"
-#include "qbos_circuit_builder.hpp"
+#include "qb/core/circuit_builder.hpp"
 namespace qbOS {
 
 bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {

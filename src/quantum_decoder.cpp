@@ -484,4 +484,3 @@ void QuantumDecoder::execute(
 
 } // QuantumDecoder::execute
 } // namespace qbOS
-REGISTER_PLUGIN(qbOS::QuantumDecoder, xacc::Algorithm)

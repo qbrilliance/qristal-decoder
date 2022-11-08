@@ -4,7 +4,6 @@
 #include "IRProvider.hpp"
 #include "InstructionIterator.hpp"
 #include "xacc.hpp"
-#include "xacc_plugin.hpp"
 #include "xacc_service.hpp"
 #include <assert.h>
 #include <cmath>

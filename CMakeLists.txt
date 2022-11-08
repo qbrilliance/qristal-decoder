@@ -48,6 +48,7 @@ add_xacc_plugin(decoder
   SOURCES
     src/decoder_kernel.cpp
     src/quantum_decoder.cpp
+    src/decoder_plugin_activator.cpp
     #TODO needs a version of core that contains qb/core/circuit_builders/ry_encoding.hpp
     #src/simplified_decoder.cpp
   HEADERS
