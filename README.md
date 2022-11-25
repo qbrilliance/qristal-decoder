@@ -17,4 +17,5 @@ In order to reduce the scaling of the gate depth and to have a relevant applicat
 ## Tests
 Test information may be added here
 
-***
+## License
+[Apache 2.0](LICENSE)
