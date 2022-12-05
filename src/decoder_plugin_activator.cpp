@@ -2,11 +2,12 @@
  *** Copyright (c) 2022 Quantum Brilliance Pty Ltd
  ***/
 
+#include "qb/decoder/decoder_kernel.hpp"
+#include "qb/decoder/quantum_decoder.hpp"
+
 #include "cppmicroservices/BundleActivator.h"
 #include "cppmicroservices/BundleContext.h"
 #include "cppmicroservices/ServiceProperties.h"
-#include "decoder_kernel.hpp"
-#include "quantum_decoder.hpp"
 
 using namespace cppmicroservices;
 

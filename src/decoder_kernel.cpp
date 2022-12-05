@@ -1,9 +1,17 @@
-#include "decoder_kernel.hpp"
+/***
+ *** Copyright (c) 2022 Quantum Brilliance Pty Ltd
+ ***/
+
+#include "qb/core/circuit_builder.hpp"
+#include "qb/decoder/decoder_kernel.hpp"
+
+#include "xacc.hpp"
+
 #include <CompositeInstruction.hpp>
 #include <Instruction.hpp>
 #include <memory>
-#include "xacc.hpp"
-#include "qb/core/circuit_builder.hpp"
+
+
 namespace qbOS {
 
 bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
@@ -144,7 +152,7 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
 
   auto gateRegistry = xacc::getService<xacc::IRProvider>("quantum");
 
-  /// 
+  ///
   // Take the exponenet of the string total metric register
   ///
 
