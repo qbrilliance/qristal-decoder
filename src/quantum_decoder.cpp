@@ -1,8 +1,11 @@
 // Copyright (c) 2022 Quantum Brilliance Pty Ltd
-#include "quantum_decoder.hpp"
+
+#include "qb/decoder/quantum_decoder.hpp"
+
 #include "Algorithm.hpp"
 #include "xacc.hpp"
 #include "xacc_service.hpp"
+
 #include <assert.h>
 #include <bitset>
 #include <iomanip>
@@ -121,7 +124,7 @@ bool QuantumDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
   return true;
 } //QuantumDecoder::initialize
 
-/////////////////////////////////////////////////////////////////////////////////////////////  
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 const std::vector<std::string> QuantumDecoder::requiredParameters() const {
   return {"probability_table", "iteration", "qubits_metric", "qubits_string",
@@ -158,10 +161,10 @@ void QuantumDecoder::execute(
 
   std::cout << "Beginning decoder algorithm.\n";
   for (int i = 0; i < S; i++) {
-	qubits_next_letter.push_back(qubits_ancilla_pool[i]);
+  qubits_next_letter.push_back(qubits_ancilla_pool[i]);
   }
   for (int i = 0; i < ml; i++) {
-	qubits_next_metric.push_back(qubits_ancilla_pool[S+i]);
+  qubits_next_metric.push_back(qubits_ancilla_pool[S+i]);
   }
 
   // Take the logarithm of the probability table
@@ -404,7 +407,7 @@ void QuantumDecoder::execute(
   // Validate the success probabilities. This is done by iterating the
   // exponential search N_TRIALS times until the best score is obtained.
   int nSuccess = 0;
- 
+
   /////////////////////////////////////////////////////////////////////////////////////////////
 
   //Have to re-initiate total_metric here for getAlgorithm("exponential-search") below
