@@ -12,7 +12,7 @@
 #include <memory>
 
 
-namespace qbOS {
+namespace qb {
 
 bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
 
@@ -160,7 +160,7 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
 //     const xacc::HeterogeneousMap &map_exp = {
 //         {"qubits_log", qubits_total_metric},
 //         {"qubits_exponent", total_metric_exponent}};
-//     qbOS::Exponent build_exp;
+//     qb::Exponent build_exp;
 //     const bool expand_ok = build_exp.expand(map_exp);
 //     auto exponent = build_exp.get();
 //     addInstructions(exponent->getInstructions());
@@ -287,7 +287,7 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
 
   std::shared_ptr<xacc::CompositeInstruction> sp_c =
       xacc::ir::asComposite(metric_state_prep->clone());
-  auto state_prep_set = qbOS::uniqueBitsQD(sp_c);
+  auto state_prep_set = qb::uniqueBitsQD(sp_c);
   std::vector<int> sp_qubits;
   for (auto bit : state_prep_set) {
       sp_qubits.push_back(bit);
@@ -319,4 +319,4 @@ bool DecoderKernel::expand(const xacc::HeterogeneousMap &runtimeOptions) {
 
 const std::vector<std::string> DecoderKernel::requiredKeys() { return {}; }
 
-} // namespace qbOS
+} // namespace qb

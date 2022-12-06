@@ -15,7 +15,7 @@
 #include <sstream>
 #include <vector>
 
-namespace qbOS {
+namespace qb {
 class SimplifiedDecoder : public xacc::Algorithm {
 private:
   // Function performs kernel operation post-measurement
@@ -64,4 +64,4 @@ public:
 
   DEFINE_ALGORITHM_CLONE(SimplifiedDecoder)
 };
-} // namespace qbOS
+} // namespace qb

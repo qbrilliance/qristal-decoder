@@ -12,7 +12,7 @@
 #include <bitset>
 #include <optional>
 #include <vector>
-namespace qbOS {
+namespace qb {
 
 // Quantum Decoder Kernel Circuit
 
@@ -40,4 +40,4 @@ public:
   const std::vector<std::string> requiredKeys() override;
   DEFINE_CLONE(DecoderKernel);
 };
-} // namespace qbOS
+} // namespace qb

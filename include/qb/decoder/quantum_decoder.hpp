@@ -13,7 +13,7 @@
 #include <sstream>
 #include <vector>
 
-namespace qbOS {
+namespace qb {
 class QuantumDecoder : public xacc::Algorithm {
 private:
   xacc::CompositeInstruction *state_prep_circuit_;
@@ -81,4 +81,4 @@ public:
 
   DEFINE_ALGORITHM_CLONE(QuantumDecoder)
 };
-} // namespace qbOS
+} // namespace qb

@@ -12,7 +12,7 @@
 #include <memory>
 #include <string>
 
-namespace qbOS {
+namespace qb {
 bool SimplifiedDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
 
   //std::vector<std::vector<float>> probability_table;
@@ -86,7 +86,7 @@ const std::vector<std::string> SimplifiedDecoder::requiredParameters() const {
 void SimplifiedDecoder::execute(
     const std::shared_ptr<xacc::AcceleratorBuffer> buffer) const {
 
-    qbOS::CircuitBuilder circ;
+    qb::CircuitBuilder circ;
 
     const int nq_symbol_const = nq_symbol;
 
@@ -95,7 +95,7 @@ void SimplifiedDecoder::execute(
             {"probability_table", probability_table},
             {"qubits_string", qubits_string}};
 
-        qbOS::RyEncoding build;
+        qb::RyEncoding build;
         const bool expand_ok = build.expand(map);
         circ.append(build);
     }
@@ -214,5 +214,5 @@ void SimplifiedDecoder::execute(
 
 
 } // SimplifiedDecoder::execute
-} // namespace qbOS
-REGISTER_PLUGIN(qbOS::SimplifiedDecoder, xacc::Algorithm)
+} // namespace qb
+REGISTER_PLUGIN(qb::SimplifiedDecoder, xacc::Algorithm)

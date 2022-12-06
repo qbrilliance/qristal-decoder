@@ -20,12 +20,12 @@ public:
       // Register DecoderKernel as both Circuit and Instruction classes.
       // i.e., can use both xacc::getService<xacc::Instruction> and xacc::getService<xacc::quantum::Circuit> to retrieve it.
       context.RegisterService<xacc::quantum::Circuit>(
-          std::make_shared<qbOS::DecoderKernel>());
+          std::make_shared<qb::DecoderKernel>());
       context.RegisterService<xacc::Instruction>(
-          std::make_shared<qbOS::DecoderKernel>());
+          std::make_shared<qb::DecoderKernel>());
       // Register QuantumDecoder as an Algorithm
       context.RegisterService<xacc::Algorithm>(
-          std::make_shared<qbOS::QuantumDecoder>());
+          std::make_shared<qb::QuantumDecoder>());
   }
 
   void Stop(BundleContext) {}

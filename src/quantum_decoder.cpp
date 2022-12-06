@@ -11,7 +11,7 @@
 #include <iomanip>
 #include <memory>
 
-namespace qbOS {
+namespace qb {
 bool QuantumDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
 
   // W prime unitary parameters
@@ -486,4 +486,4 @@ void QuantumDecoder::execute(
   assert(max_best_score >= BestScore);
 
 } // QuantumDecoder::execute
-} // namespace qbOS
+} // namespace qb
