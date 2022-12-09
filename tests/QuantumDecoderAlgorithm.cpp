@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 #include <numeric>
 
-TEST(QuantumDecoderCanonicalAlgorithmTester, checkSimple) {
+TEST(QuantumDecoderCanonicalAlgorithm, checkSimple) {
   //Initial state parameters:
   std::vector<std::string> alphabet = {"-","a"};
 
@@ -30,13 +30,13 @@ TEST(QuantumDecoderCanonicalAlgorithmTester, checkSimple) {
   for (int i = L*ml+L*S; i < L*(ml+S+1); i++) {qubits_init_null.emplace_back(i);} // L
   std::vector<int> qubits_init_repeat;
   for (int i = L*(ml+S+1); i < L*(ml+S+2); i++) {qubits_init_repeat.emplace_back(i);} // L
-  std::vector<int> qubits_superfluous_flags; 
+  std::vector<int> qubits_superfluous_flags;
   for (int i = L*(ml+S+2); i < L*(ml+S+3); i++) {qubits_superfluous_flags.emplace_back(i);} // L
 
   std::vector<int> qubits_total_metric_buffer;
   for (int i = L*(ml+S+3); i < L*(ml+S+3) + ms - ml; i++) {qubits_total_metric_buffer.emplace_back(i);} //We need total_metric to have k = log2(1 + L*(2**m - 1)) qubits, so qubits_ancilla_adder.size() = k - m
   std::vector<int> qubits_beam_metric;
-  for (int i = L*(ml+S+3) + ms - ml; i < L*(ml+S+3) + ms - ml + mb; i++) {qubits_beam_metric.emplace_back(i);} // k + L 
+  for (int i = L*(ml+S+3) + ms - ml; i < L*(ml+S+3) + ms - ml + mb; i++) {qubits_beam_metric.emplace_back(i);} // k + L
   std::vector<int> qubits_best_score;
   for (int i = L*(ml+S+3) + ms - ml + mb; i < L*(ml+S+3) + ms - ml + 2*mb; i++) {qubits_best_score.emplace_back(i);} //Same size as qubits_beam_metric
 
@@ -46,7 +46,7 @@ TEST(QuantumDecoderCanonicalAlgorithmTester, checkSimple) {
   std::vector<int> qubits_ancilla_pool;
   int num_qubits_ancilla_pool = std::max({ml+S, ms-ml, 4+5*ms+2*p+ms+S+L*S+L, 4+p+mb+2*ms+L*S+L});
   for (int i = 0; i < num_qubits_ancilla_pool; i++) {
-	qubits_ancilla_pool.push_back(last_qubit_non_ancilla + i);
+  qubits_ancilla_pool.push_back(last_qubit_non_ancilla + i);
   }
   int total_num_qubits = qubits_ancilla_pool[qubits_ancilla_pool.size()-1] + 1;
   std::cout<<"num qubits = " << total_num_qubits << "\n";
@@ -89,12 +89,4 @@ TEST(QuantumDecoderCanonicalAlgorithmTester, checkSimple) {
 //  buffer->print();
 //  EXPECT_GT(BestScore, 0);
 
-}
-
-int main(int argc, char **argv) {
-  xacc::Initialize(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  auto ret = RUN_ALL_TESTS();
-  xacc::Finalize();
-  return ret;
 }

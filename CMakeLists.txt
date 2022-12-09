@@ -31,7 +31,6 @@ set(CMAKE_MODULE_PATH ${core_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 include(base_config)
 include(add_xacc_plugin)
 include(add_poorly_behaved_dependency)
-include(add_gtest)
 
 # Project
 project(decoder
@@ -47,17 +46,20 @@ cache_install_path()
 find_package(XACC REQUIRED)
 reset_install_path()
 
-# Build decoder plugin
+# Build decoder plugins
 add_xacc_plugin(decoder
   SOURCES
     src/decoder_kernel.cpp
     src/quantum_decoder.cpp
     src/decoder_plugin_activator.cpp
-    #TODO needs a version of core that contains qb/core/circuit_builders/ry_encoding.hpp
-    src/simplified_decoder.cpp
   HEADERS
     include/qb/decoder/decoder_kernel.hpp
     include/qb/decoder/quantum_decoder.hpp
+)
+add_xacc_plugin(simplified_decoder
+  SOURCES
+    src/simplified_decoder.cpp
+  HEADERS
     include/qb/decoder/simplified_decoder.hpp
 )
 
@@ -67,5 +69,22 @@ install(
   DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
 
-# Add test
-add_gtest(QuantumDecoderAlgorithm)
+# Add tests
+add_executable(CITests_decoder
+  ${core_SOURCE_DIR}/tests/XaccInitialisedTests.cpp
+  tests/SimplifiedDecoderAlgorithm.cpp
+  tests/DecoderKernel.cpp
+  tests/QuantumDecoderAlgorithm.cpp
+)
+target_link_libraries(CITests_decoder
+  PRIVATE
+    GTest::gtest
+    qb::core_headers
+    xacc::xacc
+    xacc::quantum_gate
+    cpr
+    qb::core
+)
+add_test(NAME ci_tester COMMAND CITests_decoder)
+set_target_properties(CITests PROPERTIES BUILD_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${XACC_ROOT}/lib")
+

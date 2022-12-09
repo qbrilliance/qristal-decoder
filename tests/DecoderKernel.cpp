@@ -7,7 +7,7 @@
 // Other include statements
 ////////////////////////
 
-TEST(DecoderKernelCircuitTester, simple) {
+TEST(DecoderKernelCircuit, simple) {
   //////////////////////////////////////
   // Define circuit
   //////////////////////////////////////
@@ -142,7 +142,7 @@ TEST(DecoderKernelCircuitTester, simple) {
     // Add total metric to state preparation circuit
     state_prep->addInstructions(adder->getInstructions());
   }
-  
+
   test_circ->addInstructions(state_prep->getInstructions());
 
   // Add the decoder kernel
@@ -207,12 +207,4 @@ TEST(DecoderKernelCircuitTester, simple) {
   //////////////////////////////////////
 
   buffer->print();
-}
-
-int main(int argc, char **argv) {
-  xacc::Initialize(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  auto ret = RUN_ALL_TESTS();
-  xacc::Finalize();
-  return ret;
 }
