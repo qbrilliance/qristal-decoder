@@ -1,12 +1,14 @@
 // Copyright (c) 2022 Quantum Brilliance Pty Ltd
-#pragma once
+
+#include "qb/core/circuit_builders/ry_encoding.hpp"
+
 #include "Algorithm.hpp"
-#include "ry_encoding.hpp"
 #include "IRProvider.hpp"
 #include "InstructionIterator.hpp"
 #include "xacc.hpp"
 #include "xacc_plugin.hpp"
 #include "xacc_service.hpp"
+
 #include <assert.h>
 #include <cmath>
 #include <iomanip>
@@ -14,6 +16,8 @@
 #include <random>
 #include <sstream>
 #include <vector>
+
+#pragma once
 
 namespace qb {
 class SimplifiedDecoder : public xacc::Algorithm {
@@ -24,7 +28,7 @@ private:
 
   //Qubit registers
   std::vector<int> qubits_best_score;
-  
+
   //Choose which method to encode strings and probabilities. Currently supported methods are:
   //"ry" - ry-rotations (default)
   //"aa" - using Amplitude Amplification
@@ -53,7 +57,7 @@ public:
   int nb_timesteps;
   int nq_string;
   int nq_symbol;
-  
+
 
   const std::string name() const override {
     return "simplified-decoder";

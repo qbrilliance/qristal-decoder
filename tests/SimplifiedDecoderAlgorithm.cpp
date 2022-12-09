@@ -10,7 +10,7 @@
 #include <type_traits>
 
 //std::map<std::string, int>
-void check_output_strings(std::vector<std::vector<float>> prob_table, std::vector<int> qubits_string, 
+void check_output_strings(std::vector<std::vector<float>> prob_table, std::vector<int> qubits_string,
                            std::vector<std::string> best_beams, std::vector<std::string> included_beams, std::vector<std::string> excluded_beams) {
   //Set inputs
   auto acc = xacc::getAccelerator("sparse-sim", {{"shots", 1000}});
@@ -29,7 +29,7 @@ void check_output_strings(std::vector<std::vector<float>> prob_table, std::vecto
   std::cout << "best beam:" ;
   auto info = buffer->getInformation();
   std::string max_beam = info.at("best_beam").as<std::string>();
-  std::cout << max_beam <<  std::endl;   
+  std::cout << max_beam <<  std::endl;
   if (best_beams.size() > 0) {
       assert(("Vector best_beams does not contain the best beam " + max_beam,std::find(best_beams.begin(),best_beams.end(),max_beam) != best_beams.end()));
   }
@@ -54,14 +54,14 @@ void check_output_strings(std::vector<std::vector<float>> prob_table, std::vecto
   }
 
   // Verify number of beams
-  int nb_timesteps_ = prob_table.size(); 
+  int nb_timesteps_ = prob_table.size();
   int nb_symbols_ = prob_table[0].size();
   int nq_symbol_ = std::ceil(std::log2(nb_symbols_)) ;
-  
+
   int upper_nb_beams = std::pow(nb_symbols_ - 1,nb_timesteps_);    // String repetitions and leading nulls removed
   // Repetitions and leading nulls gone, remove remaining nulls
   std::cout << "upper_nb_beams: " << upper_nb_beams << " ";
-  
+
   std::cout << upper_nb_beams << " ";
   // Remove non-leading nulls but not ending nulls
   // Subtract number of leading non-null followed by null followed by non-null different from leading (non-null) symbol
@@ -74,14 +74,14 @@ void check_output_strings(std::vector<std::vector<float>> prob_table, std::vecto
   }
   // More generally, second null can be from 2 to nb_timesteps_-3 places after first one//. 0.5 * ((nb_timesteps-4)*(nb_timesteps-3)
   std::cout << std::endl;
-  
+
   assert(("Wrong number of beams",nb_beams < upper_nb_beams));
 
 }
 
 
 
-TEST(SimplifiedDecoderAlgorithmTester, checkSimple) {
+TEST(SimplifiedDecoderAlgorithm, checkSimple) {
   //Initial state parameters:
   std::vector<int> qubits_string ;
   std::vector<std::string> alphabet = {"-","a","b","c"};
@@ -90,16 +90,16 @@ TEST(SimplifiedDecoderAlgorithmTester, checkSimple) {
 
   //Rows represent time step, while columns represent alphabets.
   //For each row, the sum of probabilities across the columns must add up to 1.
-  std::vector<std::vector<float>> probability_table = {{0.0, 0.5, 0.5, 0.0}, {0.25, 0.25, 0.25, 0.25}};  
+  std::vector<std::vector<float>> probability_table = {{0.0, 0.5, 0.5, 0.0}, {0.25, 0.25, 0.25, 0.25}};
 
   int nb_timesteps = probability_table.size();  //Number of columns of probability_table // string length = number of rows of probability_table (number of columns is probability_table[0].size())
   //int nq_symbol = 2; // number of qubits per letter, ceiling(log2(|Sigma|))
-  
-  
+
+
   for (int i = 0; i < nb_timesteps*nq_symbol; i++) {
       qubits_string.emplace_back(i);
   }
-  
+
   std::cout<<"num qubits = " << nb_timesteps*nq_symbol << " " ;
   std::cout << " " << qubits_string.size() << "\n";
 
@@ -107,18 +107,10 @@ TEST(SimplifiedDecoderAlgorithmTester, checkSimple) {
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
-  
-  check_output_strings(probability_table, qubits_string, 
+
+  check_output_strings(probability_table, qubits_string,
                            {"01", "10"}, {}, {}) ;
-  
 
-}
 
-int main(int argc, char **argv) {
-  xacc::Initialize(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  auto ret = RUN_ALL_TESTS();
-  xacc::Finalize();
-  return ret;
 }
 

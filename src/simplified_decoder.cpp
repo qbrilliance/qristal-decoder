@@ -1,6 +1,5 @@
 // Copyright (c) 2022 Quantum Brilliance Pty Ltd
 #include "qb/decoder/simplified_decoder.hpp"
-#include "../../qbos_circuit_builders/ry_encoding.hpp"
 
 #include "Algorithm.hpp"
 #include "xacc.hpp"
