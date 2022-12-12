@@ -32,6 +32,12 @@ TEST(DecoderKernelCircuit, simple) {
   for (int i = 25; i <= 60; i++)
     qubits_ancilla_pool.push_back(i);
 
+  // This added to account for upgrade of DecoderKernel which was not matched by the tester. Apparently redundant
+  std::vector<int> qubits_total_metric_buffer = qubits_ancilla_adder;
+  int precision_size = precision_bits.size();
+  qubits_total_metric_buffer.insert(qubits_total_metric_buffer.end(), evaluation_bits.begin(), evaluation_bits.end()-precision_size);
+  //qubits_total_metric_buffer.insert(qubits_total_metric_buffer.end(), precision_bits.begin(), precision_bits.end());
+
   // Prepare initial state
   auto state_prep = gateRegistry->createComposite("state_prep");
   std::vector<int> qubits_next_letter = {qubits_ancilla_pool[0]};
@@ -152,7 +158,7 @@ TEST(DecoderKernelCircuit, simple) {
   xacc::HeterogeneousMap options{
       {"qubits_string", qubits_string},
       {"qubits_metric", qubits_metric},
-      {"qubits_ancilla_adder", qubits_ancilla_adder},
+      {"qubits_total_metric_buffer", qubits_total_metric_buffer},
       {"qubits_init_null", qubits_init_null},
       {"qubits_init_repeat", qubits_init_repeat},
       {"qubits_superfluous_flags", qubits_superfluous_flags},
