@@ -4,7 +4,14 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 # Pre-retrieve core cmake dependency routines, for bootstrapping up to the full package.
 set(CORE_TAG main)
 set(CPM_SOURCE_CACHE "${CMAKE_CURRENT_LIST_DIR}/deps" CACHE PATH "Dependencies path.")
-file(DOWNLOAD https://gitlab.com/api/v4/projects/39963594/repository/files/cmake%2Fadd_dependency%2Ecmake/raw?ref=${CORE_TAG}
+# QB's core Gitlab repo ID (to fetch the add_dependency.cmake script) 
+# Default is the public repo. 
+set(QB_CORE_REPO_ID 41590729 CACHE STRING "QB SDK core Gitlab repository Id")
+# Root Gitlab org. of SDK repos
+set(QB_SDK_GITLAB_ORG qbau/software-and-apps/public CACHE STRING "QB SDK Gitlab group")
+
+
+file(DOWNLOAD https://gitlab.com/api/v4/projects/${QB_CORE_REPO_ID}/repository/files/cmake%2Fadd_dependency%2Ecmake/raw?ref=${CORE_TAG}
      ${CPM_SOURCE_CACHE}/add_dependency.cmake
      HTTPHEADER "PRIVATE-TOKEN: $ENV{GITLAB_PRIVATE_TOKEN}"
      STATUS STATUS_LIST)
@@ -19,7 +26,7 @@ include(add_dependency)
 add_dependency(core 0
   GIT_TAG ${CORE_TAG}
   GIT_SHALLOW False # Temporary (for rapid dev).
-  GITLAB_REPOSITORY qbau/software-and-apps/core
+  GITLAB_REPOSITORY ${QB_SDK_GITLAB_ORG}/core
   SOURCE_DIR ${CORE_ROOT}
   OPTIONS
     "CPM_SOURCE_CACHE ${CPM_SOURCE_CACHE}"
