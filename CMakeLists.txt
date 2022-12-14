@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 # Pre-retrieve core cmake dependency routines, for bootstrapping up to the full package.
 set(CORE_TAG main)
 set(CPM_SOURCE_CACHE "${CMAKE_CURRENT_LIST_DIR}/deps" CACHE PATH "Dependencies path.")
-# QB's core Gitlab repo ID (to fetch the add_dependency.cmake script) 
-# Default is the public repo. 
+# QB's core Gitlab repo ID (to fetch the add_dependency.cmake script)
+# Default is the public repo.
 set(QB_CORE_REPO_ID 41590729 CACHE STRING "QB SDK core Gitlab repository Id")
 # Root Gitlab org. of SDK repos
 set(QB_SDK_GITLAB_ORG qbau/software-and-apps/public CACHE STRING "QB SDK Gitlab group")
@@ -46,7 +46,7 @@ project(decoder
   LANGUAGES C CXX)
 
 # Print out the installation directory.
-message(STATUS "Installation directory for ${CMAKE_PROJECT_NAME} set to ${CMAKE_INSTALL_PREFIX}.")
+message(STATUS "Installation directory for ${PROJECT_NAME} set to ${CMAKE_INSTALL_PREFIX}.")
 
 # Find XACC, using the path successfully validated by the core routines.
 cache_install_path()
