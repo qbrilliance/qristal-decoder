@@ -76,6 +76,13 @@ install(
   DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
 
+# Install the readme
+install(
+  FILES README.md
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/docs
+  RENAME README_${PROJECT_NAME}.md
+)
+
 # Add tests
 add_executable(CITests_decoder
   ${core_SOURCE_DIR}/tests/XaccInitialisedTests.cpp
