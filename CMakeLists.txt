@@ -1,11 +1,11 @@
 # Copyright Quantum Brilliance
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-# Temporary; this is currently needed for builds to succeed where the right version of the core is not already system installed.
-set(CORE_TAG "main")
-
 # Dependencies
 set(CORE_VERSION "0.1.1")
+if(NOT DEFINED CORE_TAG)
+  set(CORE_TAG v${CORE_VERSION})
+endif()
 
 # Note that you can set -DCORE_TAG=<tag> to a branch, tag or SHA if you want to download and use a specific commit of the core.
 
