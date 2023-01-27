@@ -1,57 +1,97 @@
-# Copyright 2022 Quantum Brilliance
+# Copyright Quantum Brilliance
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-# Pre-retrieve core cmake dependency routines, for bootstrapping up to the full package.
-set(CORE_TAG main)
-set(CPM_SOURCE_CACHE "${CMAKE_CURRENT_LIST_DIR}/deps" CACHE PATH "Dependencies path.")
-# QB's core Gitlab repo ID (to fetch the add_dependency.cmake script)
-# Default is the public repo.
-set(QB_CORE_REPO_ID 41590729 CACHE STRING "QB SDK core Gitlab repository Id")
-# Root Gitlab org. of SDK repos
-set(QB_SDK_GITLAB_ORG qbau/software-and-apps/public CACHE STRING "QB SDK Gitlab group")
+# Temporary; this is currently needed for builds to succeed where the right version of the core is not already system installed.
+set(CORE_TAG "main")
 
+# Dependencies
+set(CORE_VERSION "0.1.1")
 
-file(DOWNLOAD https://gitlab.com/api/v4/projects/${QB_CORE_REPO_ID}/repository/files/cmake%2Fadd_dependency%2Ecmake/raw?ref=${CORE_TAG}
-     ${CPM_SOURCE_CACHE}/add_dependency.cmake
-     HTTPHEADER "PRIVATE-TOKEN: $ENV{GITLAB_PRIVATE_TOKEN}"
-     STATUS STATUS_LIST)
-list(POP_FRONT STATUS_LIST STATUS_LIST0)
-if(STATUS_LIST0)
-  message(FATAL_ERROR "Failed to download core. Please set environment variable GITLAB_PRIVATE_TOKEN.")
+# Note that you can set -DCORE_TAG=<tag> to a branch, tag or SHA if you want to download and use a specific commit of the core.
+
+# Get version number from git tag.  Must be done before the project command is called.
+find_package(Git)
+if(GIT_FOUND)
+  execute_process(
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND git describe --tags --abbrev=0
+    OUTPUT_VARIABLE PROJECT_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  string(REGEX REPLACE "^v(.*)" "\\1" PROJECT_VERSION "${PROJECT_VERSION}")
 endif()
-set(CMAKE_MODULE_PATH ${CPM_SOURCE_CACHE} ${CMAKE_MODULE_PATH})
-include(add_dependency)
-
-# Load the core
-add_dependency(core 0
-  GIT_TAG ${CORE_TAG}
-  GIT_SHALLOW False # Temporary (for rapid dev).
-  GITLAB_REPOSITORY ${QB_SDK_GITLAB_ORG}/core
-  SOURCE_DIR ${CORE_ROOT}
-  OPTIONS
-    "CPM_SOURCE_CACHE ${CPM_SOURCE_CACHE}"
-)
-check_missing()
-
-# Import other core cmake routines
-set(CMAKE_MODULE_PATH ${core_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
-include(base_config)
-include(add_xacc_plugin)
-include(add_poorly_behaved_dependency)
 
 # Project
 project(decoder
   VERSION ${PROJECT_VERSION}
   DESCRIPTION "Quantum Brilliance Decoder"
-  LANGUAGES C CXX)
+  LANGUAGES C CXX
+)
 
-# Print out the installation directory.
+# Choose C++ standard version
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "Adopted C++ standard.")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Set default installation dir to the build dir.
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT DEFINED CMAKE_INSTALL_PREFIX)
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "Installation path." FORCE)
+endif()
 message(STATUS "Installation directory for ${PROJECT_NAME} set to ${CMAKE_INSTALL_PREFIX}.")
 
-# Find XACC, using the path successfully validated by the core routines.
-cache_install_path()
-find_package(XACC REQUIRED)
-reset_install_path()
+# Set default RPATH to the lib dir of the installation dir.
+set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Search path for shared libraries to encode into binaries." FORCE)
+
+# Work out build type
+set(CMAKE_BUILD_TYPE "None" CACHE STRING "Type of build: None, Release, Debug, RelWithDebInfo or MinSizeRel." FORCE)
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "None" "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+
+# Find the core
+find_package(qbcore ${CORE_VERSION} QUIET)
+
+# Try to install the core if it wasn't found.
+if (NOT qbcore_FOUND)
+
+  if (NOT INSTALL_MISSING)
+    message(FATAL_ERROR "Could not find core ${CORE_VERSION}. Please set qbcore_DIR to its installed location, or pass -DINSTALL_MISSING=ON.")
+  endif()
+
+  # Include CPM for managing dependencies, and set it up to cache them in the deps folder.
+  set(CPM_DOWNLOAD_VERSION 0.36.0)
+  set(CPM_SOURCE_CACHE "${CMAKE_CURRENT_LIST_DIR}/deps" CACHE PATH "Dependencies path.")
+  set(CPM_DOWNLOAD_LOCATION "${CPM_SOURCE_CACHE}/cpm/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
+  if(NOT (EXISTS ${CPM_DOWNLOAD_LOCATION}))
+    message(STATUS "Downloading CPM.cmake to ${CPM_DOWNLOAD_LOCATION}")
+    file(DOWNLOAD
+         https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake
+         ${CPM_DOWNLOAD_LOCATION}
+    )
+  endif()
+  include(${CPM_DOWNLOAD_LOCATION})
+
+  # Root Gitlab org. of SDK repos
+  set(QB_SDK_GITLAB_ORG qbau/software-and-apps/public CACHE STRING "QB SDK Gitlab group")
+
+  # Get the core
+  CPMAddPackage(core
+    VERSION ${CORE_VERSION}
+    GIT_TAG ${CORE_TAG}
+    GIT_SHALLOW False # Temporary (for rapid dev).
+    GITLAB_REPOSITORY ${QB_SDK_GITLAB_ORG}/core
+    SOURCE_DIR ${CORE_ROOT}
+    OPTIONS
+      "INSTALL_MISSING ON"
+      "CPM_SOURCE_CACHE ${CPM_SOURCE_CACHE}"
+      "CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}"
+      "XACC_ROOT ${XACC_ROOT}"
+      "EXATN_ROOT ${EXATN_ROOT}"
+      "TNQVM_ROOT ${TNQVM_ROOT}"
+  )
+  include(CMakeFindDependencyMacro)
+  include(${CMAKE_CURRENT_BINARY_DIR}/_deps/core-build/coreDependencies.cmake)
+  set(qbcore_DIR ${core_SOURCE_DIR})
+
+endif()
 
 # Build decoder plugins
 add_xacc_plugin(decoder
@@ -85,20 +125,15 @@ install(
 
 # Add tests
 add_executable(CITests_decoder
-  ${core_SOURCE_DIR}/tests/XaccInitialisedTests.cpp
+  ${qbcore_DIR}/tests/XaccInitialisedTests.cpp
   tests/SimplifiedDecoderAlgorithm.cpp
   tests/DecoderKernel.cpp
   tests/QuantumDecoderAlgorithm.cpp
 )
 target_link_libraries(CITests_decoder
   PRIVATE
-    GTest::gtest
-    qb::core_headers
-    xacc::xacc
-    xacc::quantum_gate
-    cpr
     qb::core
 )
 add_test(NAME ci_tester COMMAND CITests_decoder)
-set_target_properties(CITests PROPERTIES BUILD_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${XACC_ROOT}/lib")
+set_target_properties(CITests_decoder PROPERTIES BUILD_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${XACC_ROOT}/lib")
 
