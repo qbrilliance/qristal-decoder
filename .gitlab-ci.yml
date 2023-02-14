@@ -1,5 +1,5 @@
 variables:
-  CI_IMAGE: quantumbrilliance/ci-ubuntu20.04:sdk-beta-13
+  CI_IMAGE: quantumbrilliance/ci-ubuntu20.04:sdk-beta-14
 
 stages:
   - build
@@ -10,10 +10,11 @@ stages:
     - whoami
     - echo $PWD
     - ls *
+    - export ARTEFACTS_DIR=$PWD/../core
     # The state of the runner is persistent outside the working dir, do delete any previous core dirs.
-    - rm -rf $QB_DIR/core $QB_DIR/core-local
-    - mv core_artefacts $QB_DIR/core
-    - cmake --install $QB_DIR/core/build
+    - rm -rf $ARTEFACTS_DIR $QB_DIR/core-local
+    - mv core_artefacts $ARTEFACTS_DIR
+    - cmake --install $ARTEFACTS_DIR/build
 
 ubuntu20-build-triggered-from-upstream:
   stage: build
