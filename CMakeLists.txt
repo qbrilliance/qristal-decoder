@@ -36,6 +36,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Set default installation dir to the build dir.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT DEFINED CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "Installation path." FORCE)
+  set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OFF)
 endif()
 message(STATUS "Installation directory for ${PROJECT_NAME} set to ${CMAKE_INSTALL_PREFIX}.")
 
@@ -47,7 +48,9 @@ set(CMAKE_BUILD_TYPE "None" CACHE STRING "Type of build: None, Release, Debug, R
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "None" "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 
 # Find the core
-find_package(qbcore ${CORE_VERSION} QUIET)
+if (NOT SKIP_FIND_CORE)
+  find_package(qbcore ${CORE_VERSION} QUIET)
+endif()
 
 # Try to install the core if it wasn't found.
 if (NOT qbcore_FOUND)
