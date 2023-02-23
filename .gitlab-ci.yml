@@ -1,5 +1,5 @@
 variables:
-  CI_IMAGE: quantumbrilliance/ci-ubuntu20.04:sdk-beta-14
+  CI_IMAGE: quantumbrilliance/ci-ubuntu20.04:sdk-beta-17
 
 stages:
   - build
@@ -20,6 +20,8 @@ ubuntu20-build-triggered-from-upstream:
   stage: build
   image: $CI_IMAGE
   extends: .install_core
+  tags: 
+    - docker-heavy
   rules:
     - if: $CI_PIPELINE_SOURCE == "pipeline"
   needs:
@@ -43,6 +45,8 @@ ubuntu20-cpp-tests-triggered-from-upstream:
   stage: test
   extends: .install_core
   image: $CI_IMAGE
+  tags: 
+    - docker-heavy
   rules:
     - if: $CI_PIPELINE_SOURCE == "pipeline"
   needs:
@@ -65,6 +69,8 @@ ubuntu20-build-triggered-locally:
   stage: build
   image: $CI_IMAGE
   extends: .install_core
+  tags: 
+    - docker-heavy
   rules:
     - if: $CI_PIPELINE_SOURCE != "pipeline"
   needs:
@@ -87,6 +93,8 @@ ubuntu20-cpp-tests-triggered-locally:
   stage: test
   extends: .install_core
   image: $CI_IMAGE
+  tags: 
+    - docker-heavy
   rules:
     - if: $CI_PIPELINE_SOURCE != "pipeline"
   needs:
