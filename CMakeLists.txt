@@ -33,6 +33,14 @@ set(CMAKE_CXX_STANDARD 17 CACHE STRING "Adopted C++ standard.")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Enable/disable warnings
+if(WARNINGS)
+  message(STATUS "Warnings enabled")
+  add_compile_options(-Wall -Wextra -Wunreachable-code -Wunused) # -Werror
+else()
+  add_compile_options(-w)
+endif()
+
 # Set default installation dir to the build dir.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT DEFINED CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "Installation path." FORCE)
@@ -89,6 +97,7 @@ if (NOT qbcore_FOUND)
       "XACC_ROOT ${XACC_ROOT}"
       "EXATN_ROOT ${EXATN_ROOT}"
       "TNQVM_ROOT ${TNQVM_ROOT}"
+      "WARNINGS ${WARNINGS}"
   )
   include(CMakeFindDependencyMacro)
   include(${CMAKE_CURRENT_BINARY_DIR}/_deps/core-build/coreDependencies.cmake)
