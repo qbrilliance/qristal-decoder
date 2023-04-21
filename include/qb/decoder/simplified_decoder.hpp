@@ -25,6 +25,7 @@ private:
   // Function performs kernel operation post-measurement
   std::function<std::string(std::string)> f_kernel_; //Converts selected ionput string to form of corresponding output string (beam)
   xacc::Accelerator *qpu_;          //Accelerator, optional
+  bool is_msb = false;		//
 
   //Qubit registers
   std::vector<int> qubits_best_score;

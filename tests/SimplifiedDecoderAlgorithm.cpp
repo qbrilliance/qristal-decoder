@@ -15,7 +15,6 @@ void check_output_strings(std::vector<std::vector<float>> prob_table, std::vecto
   //Set inputs
   auto acc = xacc::getAccelerator("sparse-sim", {{"shots", 1000}});
   auto gateRegistry = xacc::getService<xacc::IRProvider>("quantum");
-  std::cout << "getAlgorithm()" << std::endl;
   auto simplified_decoder_algo = xacc::getAlgorithm(
     "simplified-decoder", {{"probability_table", prob_table},
                         {"qubits_string", qubits_string},
@@ -114,3 +113,75 @@ TEST(SimplifiedDecoderAlgorithm, checkSimple) {
 
 }
 
+TEST(SimplifiedDecoderAlgorithm, check_aer) {
+  //Initial state parameters:
+  std::vector<int> qubits_string ;
+  std::vector<std::string> alphabet = {"-","a","b","c"};
+  int nb_symbols = alphabet.size();
+  int nq_symbol = std::ceil(std::log2(nb_symbols)) ;
+
+  //Rows represent time step, while columns represent alphabets.
+  //Table rigged to yield 'ab' as only beam
+  std::vector<std::vector<float>> probability_table = {{0.0, 1.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}};
+
+  int nb_timesteps = probability_table.size();  //Number of columns of probability_table // string length = number of rows of probability_table (number of columns is probability_table[0].size())
+
+  for (int i = 0; i < nb_timesteps*nq_symbol; i++) {
+      qubits_string.emplace_back(i);
+  }
+
+  auto acc = xacc::getAccelerator("aer", {{"shots", 1000}});
+  auto gateRegistry = xacc::getService<xacc::IRProvider>("quantum");
+  std::cout << "getAlgorithm()" << std::endl;
+  auto simplified_decoder_algo = xacc::getAlgorithm(
+    "simplified-decoder", {{"probability_table", probability_table},
+                        {"qubits_string", qubits_string},
+                        {"qpu", acc}});
+
+  auto buffer = xacc::qalloc((int)qubits_string.size());
+  std::cout << "execute()" << std::endl;
+  simplified_decoder_algo->execute(buffer);
+
+  std::cout << "best beam:" ;
+  auto info = buffer->getInformation();
+  std::string max_beam = info.at("best_beam").as<std::string>();
+  std::cout << max_beam <<  std::endl;
+  assert(("best beam should equal bc: " + max_beam, max_beam == "0111"));
+}
+
+TEST(SimplifiedDecoderAlgorithm, check_lsb) {
+  //Initial state parameters:
+  std::vector<int> qubits_string ;
+  std::vector<std::string> alphabet = {"-","a","b","c"};
+  int nb_symbols = alphabet.size();
+  int nq_symbol = std::ceil(std::log2(nb_symbols)) ;
+
+  //Rows represent time step, while columns represent alphabets.
+  //Table rigged to yield 'ab' as only beam
+  std::vector<std::vector<float>> probability_table = {{0.0, 1.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}};
+
+  int nb_timesteps = probability_table.size();  //Number of columns of probability_table // string length = number of rows of probability_table (number of columns is probability_table[0].size())
+
+  for (int i = 0; i < nb_timesteps*nq_symbol; i++) {
+      qubits_string.emplace_back(i);
+  }
+
+  auto acc = xacc::getAccelerator("sparse-sim", {{"shots", 1000}});
+  auto gateRegistry = xacc::getService<xacc::IRProvider>("quantum");
+  std::cout << "getAlgorithm()" << std::endl;
+  auto simplified_decoder_algo = xacc::getAlgorithm(
+    "simplified-decoder", {{"probability_table", probability_table},
+                        {"qubits_string", qubits_string},
+			{"is_msb", true},
+                        {"qpu", acc}});
+
+  auto buffer = xacc::qalloc((int)qubits_string.size());
+  std::cout << "execute()" << std::endl;
+  simplified_decoder_algo->execute(buffer);
+
+  std::cout << "best beam:" ;
+  auto info = buffer->getInformation();
+  std::string max_beam = info.at("best_beam").as<std::string>();
+  std::cout << max_beam <<  std::endl;
+  assert(("best beam should equal c-: " + max_beam, max_beam == "1110"));
+}

@@ -68,8 +68,18 @@ bool SimplifiedDecoder::initialize(const xacc::HeterogeneousMap &parameters) {
     qpu_ = qpp.get();
   }
 
+  if (parameters.keyExists<bool>("is_msb")) {
+      is_msb = parameters.get<bool>("is_msb");
+  }
+  else if (qpu_->name() == "aer") {    // aer qpu has lsb convention
+  	  is_msb = true;
+  }
+
+
   return true;
+
 } //SimplifiedDecoder::initialize
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -113,7 +123,6 @@ void SimplifiedDecoder::execute(
     qpu_->execute(buffer, circuit);  // acc
     std::map<std::string, int> measurements = buffer->getMeasurementCounts();
     std::string output_string = buffer->toString() ;
-    std::cout << "output_string:\n" << output_string << std::endl;
 
   /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -122,7 +131,6 @@ void SimplifiedDecoder::execute(
       std::string no_repeats_;
       std::string beam_;
       std::string null_char_ ;
-      //std::cout << "f_kernel_  " << string_ << std::endl;
       // nq_symbol cannot be known at compile time
       switch (nq_symbol) {
           case 1:
@@ -131,16 +139,33 @@ void SimplifiedDecoder::execute(
           case 2:
               null_char_ = std::bitset<2>(0).to_string();
               break;
+          case 3:
+              null_char_ = std::bitset<3>(0).to_string();
+              break;
+          case 4:
+              null_char_ = std::bitset<4>(0).to_string();
+              break;
+          case 5:
+              null_char_ = std::bitset<5>(0).to_string();
+              break;
+	  default:
+	      throw std::runtime_error("Invalid number of nq_symbol!\n");
       }
 
       // Contract repeats in string_
-      std::string current_char_ = string_.substr(0,nq_symbol);
+      std::string current_char_; 
+      current_char_ = string_.substr(0,nq_symbol);
       int current_place_ = 0;  // Last new symbol
       int next_place_ = current_place_;
       std::string next_char_ = current_char_;    // Next non-repeat symbol
       int no_repeat_length = 0;
       while (current_place_ < nb_timesteps) {
-          no_repeats_ += current_char_;
+	  if (is_msb) {
+              no_repeats_ = current_char_ + no_repeats_;
+	  }
+	  else {
+              no_repeats_ += current_char_;
+	  }
           no_repeat_length++;
           next_place_++;
           next_char_ = string_.substr(next_place_*nq_symbol,nq_symbol);
@@ -180,7 +205,6 @@ void SimplifiedDecoder::execute(
     std::map<std::string, int> beams;
     std::string input_string;
     std::string beam;
-    std::cout << "beams" << std::endl;
     for (iter = measurements.begin(); iter != measurements.end(); iter++){
         input_string = iter->first;
         beam = f_kernel_(input_string);
