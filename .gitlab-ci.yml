@@ -1,5 +1,5 @@
 variables:
-  CI_IMAGE: quantumbrilliance/ci-ubuntu20.04:sdk-beta-18
+  CI_IMAGE: registry.gitlab.com/qbau/software-and-apps/ci-dockerfiles/ci-ubuntu20.04:sdk-beta-20
 
 stages:
   - build
