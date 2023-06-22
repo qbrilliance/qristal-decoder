@@ -48,9 +48,6 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT DEFINED CMAKE_INSTALL_PREF
 endif()
 message(STATUS "Installation directory for ${PROJECT_NAME} set to ${CMAKE_INSTALL_PREFIX}.")
 
-# Set default RPATH to the lib dir of the installation dir.
-set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Search path for shared libraries to encode into binaries." FORCE)
-
 # Work out build type
 set(CMAKE_BUILD_TYPE "None" CACHE STRING "Type of build: None, Release, Debug, RelWithDebInfo or MinSizeRel." FORCE)
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "None" "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
@@ -105,6 +102,9 @@ if (NOT qbcore_FOUND)
 
 endif()
 
+# Set default RPATH to the lib dir of the installation dir.
+set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${qbcore_LIBDIR} CACHE PATH "Search path for shared libraries to encode into binaries." FORCE)
+
 # Build decoder plugins
 add_xacc_plugin(decoder
   SOURCES
@@ -147,5 +147,5 @@ target_link_libraries(CITests_decoder
     qb::core
 )
 add_test(NAME ci_tester COMMAND CITests_decoder)
-set_target_properties(CITests_decoder PROPERTIES BUILD_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${XACC_ROOT}/lib")
+set_target_properties(CITests_decoder PROPERTIES BUILD_RPATH "${CMAKE_INSTALL_PREFIX}/${qbcore_LIBDIR};${XACC_ROOT}/lib")
 
