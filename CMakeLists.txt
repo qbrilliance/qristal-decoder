@@ -96,9 +96,7 @@ if (NOT qbcore_FOUND)
       "TNQVM_ROOT ${TNQVM_ROOT}"
       "WARNINGS ${WARNINGS}"
   )
-  include(CMakeFindDependencyMacro)
-  include(${CMAKE_CURRENT_BINARY_DIR}/_deps/core-build/coreDependencies.cmake)
-  set(qbcore_DIR ${core_SOURCE_DIR})
+  set(qbcore_LIBDIR ${CMAKE_INSTALL_LIBDIR})
 
 endif()
 
