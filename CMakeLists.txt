@@ -86,7 +86,6 @@ if (NOT qbcore_FOUND)
     GIT_TAG ${CORE_TAG}
     GIT_SHALLOW False # Temporary (for rapid dev).
     GITLAB_REPOSITORY ${QB_SDK_GITLAB_ORG}/core
-    SOURCE_DIR ${CORE_ROOT}
     OPTIONS
       "INSTALL_MISSING ON"
       "CPM_SOURCE_CACHE ${CPM_SOURCE_CACHE}"
@@ -96,7 +95,9 @@ if (NOT qbcore_FOUND)
       "TNQVM_ROOT ${TNQVM_ROOT}"
       "WARNINGS ${WARNINGS}"
   )
-  set(qbcore_LIBDIR ${CMAKE_INSTALL_LIBDIR})
+  include(CMakeFindDependencyMacro)
+  include(${core_BINARY_DIR}/afterCPMAddPackage.cmake)
+  set(qbcore_DIR ${core_SOURCE_DIR})
 
 endif()
 
