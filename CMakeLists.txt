@@ -77,15 +77,15 @@ if (NOT qbcore_FOUND)
   endif()
   include(${CPM_DOWNLOAD_LOCATION})
 
-  # Root Gitlab org. of SDK repos
-  set(QB_SDK_GITLAB_ORG qbau/software-and-apps/public CACHE STRING "QB SDK Gitlab group")
+  # Core repository of Qristal - use public version by default
+  set(QRISTAL_GIT_CORE https://github.com/qbrilliance/qristal-core.git CACHE STRING "Git repository for core components of Qristal")
 
   # Get the core
   CPMAddPackage(core
     VERSION ${CORE_VERSION}
     GIT_TAG ${CORE_TAG}
     GIT_SHALLOW False # Temporary (for rapid dev).
-    GITLAB_REPOSITORY ${QB_SDK_GITLAB_ORG}/core
+    GIT_REPOSITORY ${QRISTAL_GIT_CORE}
     OPTIONS
       "INSTALL_MISSING ON"
       "CPM_SOURCE_CACHE ${CPM_SOURCE_CACHE}"
@@ -147,4 +147,3 @@ target_link_libraries(CITests_decoder
 )
 add_test(NAME ci_tester COMMAND CITests_decoder)
 set_target_properties(CITests_decoder PROPERTIES BUILD_RPATH "${CMAKE_INSTALL_PREFIX}/${qbcore_LIBDIR};${XACC_ROOT}/lib")
-
