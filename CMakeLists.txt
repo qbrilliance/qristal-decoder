@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 # Dependencies
-set(CORE_VERSION "1.2.0")
+set(CORE_VERSION "1.3.0")
 if(NOT DEFINED CORE_TAG)
   set(CORE_TAG v${CORE_VERSION})
 endif()
