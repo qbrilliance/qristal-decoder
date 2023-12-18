@@ -113,12 +113,16 @@ add_xacc_plugin(decoder
   HEADERS
     include/qb/decoder/decoder_kernel.hpp
     include/qb/decoder/quantum_decoder.hpp
+  DEPENDENCIES
+    qb::core
 )
 add_xacc_plugin(simplified_decoder
   SOURCES
     src/simplified_decoder.cpp
   HEADERS
     include/qb/decoder/simplified_decoder.hpp
+  DEPENDENCIES
+    qb::core
 )
 
 # Install the headers
