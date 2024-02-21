@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 # Dependencies
-set(CORE_VERSION "1.4.0")
+set(CORE_VERSION "1.5.0")
 if(NOT DEFINED CORE_TAG)
   set(CORE_TAG v${CORE_VERSION})
 endif()
@@ -150,4 +150,3 @@ target_link_libraries(CITests_decoder
     qb::core
 )
 add_test(NAME ci_tester COMMAND CITests_decoder)
-set_target_properties(CITests_decoder PROPERTIES BUILD_RPATH "${CMAKE_INSTALL_PREFIX}/${qbcore_LIBDIR};${XACC_ROOT}/lib")

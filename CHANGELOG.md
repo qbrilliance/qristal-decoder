@@ -3,9 +3,10 @@
 The quantum decoder is a speech-to-text application based on Qristal.
 
 
-## [1.x.x] - 202x-xx-xx
+## [1.5.0] - 2024-02-21
 
 ### Fixed
+- Small simplification of cmake code
 - Add explicit dependency on the Qristal core to decoder and simplified_decoder XACC plugins
 
 
