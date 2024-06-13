@@ -138,9 +138,19 @@ install(
   RENAME README_${PROJECT_NAME}.md
 )
 
+# XaccInitialisedTests.cpp is in a different core location in the source vs install.
+# Add a test to check which one to use.
+
+# Default to core install location
+set(XACC_TEST_DIR ${qbcore_DIR}/tests)
+if(EXISTS ${qbcore_DIR}/tests/misc_cpp)
+  # Use core source location instead
+  set(XACC_TEST_DIR ${qbcore_DIR}/tests/misc_cpp)  
+endif()
+
 # Add tests
 add_executable(CITests_decoder
-  ${qbcore_DIR}/tests/XaccInitialisedTests.cpp
+  ${XACC_TEST_DIR}/XaccInitialisedTests.cpp
   tests/SimplifiedDecoderAlgorithm.cpp
   tests/DecoderKernel.cpp
   tests/QuantumDecoderAlgorithm.cpp

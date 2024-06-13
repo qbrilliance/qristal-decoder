@@ -1,5 +1,8 @@
 variables:
-  CI_IMAGE: registry.gitlab.com/qbau/software-and-apps/ci-dockerfiles/ubuntu-22.04:sdk-5
+  CI_IMAGE: registry.gitlab.com/qbau/software-and-apps/ci-dockerfiles/ubuntu_x86-22.04:all_dep_clang-1
+  # CORE_REF specifies the reference to copy artifacts from e.g. "refs/merge-requests/209/head"
+  # default is "main"
+  CORE_REF: main
 
 stages:
   - build
@@ -21,7 +24,7 @@ workflow:
     - ls *
     - export ARTEFACTS_DIR=$PWD/../core
     # The state of the runner is persistent outside the working dir, do delete any previous core dirs.
-    - rm -rf $ARTEFACTS_DIR $QB_DIR/core-local
+    - rm -rf $ARTEFACTS_DIR $QB_DIR/core
     - mv core_artefacts $ARTEFACTS_DIR
     - cmake --install $ARTEFACTS_DIR/build
 
@@ -40,9 +43,9 @@ ci-build-triggered-from-upstream:
       artifacts: true
   script:
     - echo Using core branch $UPSTREAM_REF
-    - cmake -B build . -Dqbcore_DIR=${QB_DIR}/core-local
+    - cmake -B build . -Dqbcore_DIR=${QB_DIR}/core
     - cmake --build build
-    - rm -rf $QB_DIR/core $QB_DIR/core-local
+    - rm -rf $WORK_DIR/core $QB_DIR/core
   artifacts:
     when: always
     paths:
@@ -68,7 +71,7 @@ ci-cpp-tests-triggered-from-upstream:
     - echo Using core branch $UPSTREAM_REF
     - cmake --install build
     - timeout 1m ./build/CITests_decoder --test --gtest_output='xml:decoder_gtests.xml' || true #TODO fix test and remove timeout
-    - rm -rf $QB_DIR/core $QB_DIR/core-local
+    - rm -rf $WORK_DIR/core $QB_DIR/core
       #artifacts:
       #  when: always
       #  reports:
@@ -85,12 +88,13 @@ ci-build-triggered-locally:
   needs:
     - project: qbau/software-and-apps/core
       job: ci-build
-      ref: main
+      ref: $CORE_REF
       artifacts: true
   script:
-    - cmake -B build . -Dqbcore_DIR=${QB_DIR}/core-local
+    - echo Using core branch $CORE_REF
+    - cmake -B build . -Dqbcore_DIR=${QB_DIR}/core
     - cmake --build build
-    - rm -rf $QB_DIR/core $QB_DIR/core-local
+    - rm -rf $WORK_DIR/core $QB_DIR/core
   artifacts:
     when: always
     paths:
@@ -110,12 +114,13 @@ ci-cpp-tests-triggered-locally:
     - "ci-build-triggered-locally"
     - project: qbau/software-and-apps/core
       job: ci-build
-      ref: main
+      ref: $CORE_REF
       artifacts: true
   script:
+    - echo Using core branch $CORE_REF
     - cmake --install build
     - timeout 1m ./build/CITests_decoder --test --gtest_output='xml:decoder_gtests.xml' || true #TODO fix test and remove timeout
-    - rm -rf $QB_DIR/core $QB_DIR/core-local
+    - rm -rf $WORK_DIR/core $QB_DIR/core
       #artifacts:
       #  when: always
       #  reports:
