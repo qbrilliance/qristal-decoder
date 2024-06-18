@@ -3,6 +3,11 @@
 The quantum decoder is a speech-to-text application based on Qristal.
 
 
+## [1.6.0] - 2024-06-18
+
+- No changes
+
+
 ## [1.5.0] - 2024-02-21
 
 ### Fixed
