@@ -1,7 +1,9 @@
 // Copyright (c) 2022 Quantum Brilliance Pty Ltd
+
 #include "Circuit.hpp"
 #include "xacc.hpp"
 #include "xacc_service.hpp"
+
 #include <cmath>
 #include <gtest/gtest.h>
 #include <math.h>
@@ -9,7 +11,6 @@
 #include <string>
 #include <type_traits>
 
-//std::map<std::string, int>
 void check_output_strings(std::vector<std::vector<float>> prob_table, std::vector<int> qubits_string,
                            std::vector<std::string> best_beams, std::vector<std::string> included_beams, std::vector<std::string> excluded_beams) {
   //Set inputs
@@ -75,10 +76,7 @@ void check_output_strings(std::vector<std::vector<float>> prob_table, std::vecto
   std::cout << std::endl;
 
   assert(("Wrong number of beams",nb_beams < upper_nb_beams));
-
 }
-
-
 
 TEST(SimplifiedDecoderAlgorithm, checkSimple) {
   //Initial state parameters:
@@ -92,8 +90,6 @@ TEST(SimplifiedDecoderAlgorithm, checkSimple) {
   std::vector<std::vector<float>> probability_table = {{0.0, 0.5, 0.5, 0.0}, {0.25, 0.25, 0.25, 0.25}};
 
   int nb_timesteps = probability_table.size();  //Number of columns of probability_table // string length = number of rows of probability_table (number of columns is probability_table[0].size())
-  //int nq_symbol = 2; // number of qubits per letter, ceiling(log2(|Sigma|))
-
 
   for (int i = 0; i < nb_timesteps*nq_symbol; i++) {
       qubits_string.emplace_back(i);
@@ -106,11 +102,7 @@ TEST(SimplifiedDecoderAlgorithm, checkSimple) {
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
-
-  check_output_strings(probability_table, qubits_string,
-                           {"01", "10"}, {}, {}) ;
-
-
+  check_output_strings(probability_table, qubits_string, {"01", "10"}, {}, {}) ;
 }
 
 TEST(SimplifiedDecoderAlgorithm, check_aer) {
@@ -172,7 +164,7 @@ TEST(SimplifiedDecoderAlgorithm, check_lsb) {
   auto simplified_decoder_algo = xacc::getAlgorithm(
     "simplified-decoder", {{"probability_table", probability_table},
                         {"qubits_string", qubits_string},
-			{"is_msb", true},
+                        {"is_msb", true},
                         {"qpu", acc}});
 
   auto buffer = xacc::qalloc((int)qubits_string.size());

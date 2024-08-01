@@ -54,14 +54,14 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "None" "Debug" "Release" "M
 
 # Find the core
 if (NOT SKIP_FIND_CORE)
-  find_package(qbcore ${CORE_VERSION} QUIET)
+  find_package(qristal_core ${CORE_VERSION} QUIET)
 endif()
 
 # Try to install the core if it wasn't found.
-if (NOT qbcore_FOUND)
+if (NOT qristal_core_FOUND)
 
   if (NOT INSTALL_MISSING)
-    message(FATAL_ERROR "Could not find core ${CORE_VERSION}. Please set qbcore_DIR to its installed location, or pass -DINSTALL_MISSING=ON.")
+    message(FATAL_ERROR "Could not find core ${CORE_VERSION}. Please set qristal_core_DIR to its installed location, or pass -DINSTALL_MISSING=ON.")
   endif()
 
   # Include CPM for managing dependencies, and set it up to cache them in the deps folder.
@@ -97,12 +97,12 @@ if (NOT qbcore_FOUND)
   )
   include(CMakeFindDependencyMacro)
   include(${core_BINARY_DIR}/afterCPMAddPackage.cmake)
-  set(qbcore_DIR ${core_SOURCE_DIR})
+  set(qristal_core_DIR ${core_SOURCE_DIR})
 
 endif()
 
 # Set default RPATH to the lib dir of the installation dir.
-set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${qbcore_LIBDIR} CACHE PATH "Search path for shared libraries to encode into binaries." FORCE)
+set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${qristal_core_LIBDIR} CACHE PATH "Search path for shared libraries to encode into binaries." FORCE)
 
 # Build decoder plugins
 add_xacc_plugin(decoder
@@ -111,18 +111,18 @@ add_xacc_plugin(decoder
     src/quantum_decoder.cpp
     src/decoder_plugin_activator.cpp
   HEADERS
-    include/qb/decoder/decoder_kernel.hpp
-    include/qb/decoder/quantum_decoder.hpp
+    include/qristal/decoder/decoder_kernel.hpp
+    include/qristal/decoder/quantum_decoder.hpp
   DEPENDENCIES
-    qb::core
+    qristal::core
 )
 add_xacc_plugin(simplified_decoder
   SOURCES
     src/simplified_decoder.cpp
   HEADERS
-    include/qb/decoder/simplified_decoder.hpp
+    include/qristal/decoder/simplified_decoder.hpp
   DEPENDENCIES
-    qb::core
+    qristal::core
 )
 
 # Install the headers
@@ -142,10 +142,10 @@ install(
 # Add a test to check which one to use.
 
 # Default to core install location
-set(XACC_TEST_DIR ${qbcore_DIR}/tests)
-if(EXISTS ${qbcore_DIR}/tests/misc_cpp)
+set(XACC_TEST_DIR ${qristal_core_DIR}/tests)
+if(EXISTS ${qristal_core_DIR}/tests/misc_cpp)
   # Use core source location instead
-  set(XACC_TEST_DIR ${qbcore_DIR}/tests/misc_cpp)  
+  set(XACC_TEST_DIR ${qristal_core_DIR}/tests/misc_cpp)
 endif()
 
 # Add tests
@@ -157,6 +157,6 @@ add_executable(CITests_decoder
 )
 target_link_libraries(CITests_decoder
   PRIVATE
-    qb::core
+    qristal::core
 )
 add_test(NAME ci_tester COMMAND CITests_decoder)

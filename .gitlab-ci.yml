@@ -32,7 +32,7 @@ ci-build-triggered-from-upstream:
   stage: build
   image: $CI_IMAGE
   extends: .install_core
-  tags: 
+  tags:
     - x86Docker
   rules:
     - if: $CI_PIPELINE_SOURCE == "pipeline"
@@ -43,7 +43,7 @@ ci-build-triggered-from-upstream:
       artifacts: true
   script:
     - echo Using core branch $UPSTREAM_REF
-    - cmake -B build . -Dqbcore_DIR=${QB_DIR}/core
+    - cmake -B build . -Dqristal_core_DIR=${QB_DIR}/core
     - cmake --build build
     - rm -rf $WORK_DIR/core $QB_DIR/core
   artifacts:
@@ -57,7 +57,7 @@ ci-cpp-tests-triggered-from-upstream:
   stage: test
   extends: .install_core
   image: $CI_IMAGE
-  tags: 
+  tags:
     - x86Docker
   rules:
     - if: $CI_PIPELINE_SOURCE == "pipeline"
@@ -81,7 +81,7 @@ ci-build-triggered-locally:
   stage: build
   image: $CI_IMAGE
   extends: .install_core
-  tags: 
+  tags:
     - x86Docker
   rules:
     - if: $CI_PIPELINE_SOURCE != "pipeline"
@@ -92,7 +92,7 @@ ci-build-triggered-locally:
       artifacts: true
   script:
     - echo Using core branch $CORE_REF
-    - cmake -B build . -Dqbcore_DIR=${QB_DIR}/core
+    - cmake -B build . -Dqristal_core_DIR=${QB_DIR}/core
     - cmake --build build
     - rm -rf $WORK_DIR/core $QB_DIR/core
   artifacts:
@@ -106,7 +106,7 @@ ci-cpp-tests-triggered-locally:
   stage: test
   extends: .install_core
   image: $CI_IMAGE
-  tags: 
+  tags:
     - x86Docker
   rules:
     - if: $CI_PIPELINE_SOURCE != "pipeline"

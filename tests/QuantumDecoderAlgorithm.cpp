@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Quantum Brilliance Pty Ltd
+
 #include "Circuit.hpp"
 #include "xacc.hpp"
 #include "xacc_service.hpp"
@@ -46,7 +47,7 @@ TEST(QuantumDecoderCanonicalAlgorithm, checkSimple) {
   std::vector<int> qubits_ancilla_pool;
   int num_qubits_ancilla_pool = std::max({ml+S, ms-ml, 4+5*ms+2*p+ms+S+L*S+L, 4+p+mb+2*ms+L*S+L});
   for (int i = 0; i < num_qubits_ancilla_pool; i++) {
-  qubits_ancilla_pool.push_back(last_qubit_non_ancilla + i);
+    qubits_ancilla_pool.push_back(last_qubit_non_ancilla + i);
   }
   int total_num_qubits = qubits_ancilla_pool[qubits_ancilla_pool.size()-1] + 1;
   std::cout<<"num qubits = " << total_num_qubits << "\n";
@@ -54,7 +55,7 @@ TEST(QuantumDecoderCanonicalAlgorithm, checkSimple) {
   const int BestScore = 0; //Initial best score
   int N_TRIALS = 4; //Number of decoder iterations
 
-//  const int iteration = probability_table[0].size(); //Number of columns of probability_table
+  //const int iteration = probability_table[0].size(); //Number of columns of probability_table
   const int iteration = probability_table.size(); //Number of rows of probability_table
   const int num_next_letter_qubits = S;
   const int num_next_metric_qubits = ml;
@@ -86,7 +87,6 @@ TEST(QuantumDecoderCanonicalAlgorithm, checkSimple) {
   auto buffer = xacc::qalloc(total_num_qubits);
   quantum_decoder_algo->execute(buffer);
   auto info = buffer->getInformation();
-//  buffer->print();
-//  EXPECT_GT(BestScore, 0);
-
+  //buffer->print();
+  // EXPECT_GT(BestScore, 0);
 }

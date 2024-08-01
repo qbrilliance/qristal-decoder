@@ -1,11 +1,9 @@
-// Copyright (c) 2022 Quantum Brilliance Pty Ltd
+// Copyright (c) Quantum Brilliance Pty Ltd
+
 #include "Circuit.hpp"
 #include "xacc.hpp"
 #include "xacc_service.hpp"
 #include <gtest/gtest.h>
-////////////////////////
-// Other include statements
-////////////////////////
 
 TEST(DecoderKernelCircuit, simple) {
   //////////////////////////////////////
@@ -152,7 +150,7 @@ TEST(DecoderKernelCircuit, simple) {
   test_circ->addInstructions(state_prep->getInstructions());
 
   // Add the decoder kernel
-//  std::vector<int> qubits_total_metric = {qubits_metric[0], qubits_metric[1], qubits_ancilla_adder[0]};
+  //std::vector<int> qubits_total_metric = {qubits_metric[0], qubits_metric[1], qubits_ancilla_adder[0]};
   auto decoder_kernel = std::dynamic_pointer_cast<xacc::CompositeInstruction>(
       xacc::getService<xacc::Instruction>("DecoderKernel"));
   xacc::HeterogeneousMap options{
@@ -188,10 +186,10 @@ TEST(DecoderKernelCircuit, simple) {
   for (int i = 0; i < qubits_superfluous_flags.size(); i++) {
       test_circ->addInstruction(gateRegistry->createInstruction("Measure", qubits_superfluous_flags[i]));
   }
-//   for (int i = 0; i < evaluation_bits.size(); i++) {
-//     test_circ->addInstruction(gateRegistry->createInstruction("Measure", evaluation_bits[i]));
-//   }
-//   test_circ->addInstruction(gateRegistry->createInstruction("Measure", qubits_ancilla_pool[0]));
+  //for (int i = 0; i < evaluation_bits.size(); i++) {
+  //  test_circ->addInstruction(gateRegistry->createInstruction("Measure", evaluation_bits[i]));
+  //}
+  //test_circ->addInstruction(gateRegistry->createInstruction("Measure", qubits_ancilla_pool[0]));
 
   //////////////////////////////////////
   // Run circuit
