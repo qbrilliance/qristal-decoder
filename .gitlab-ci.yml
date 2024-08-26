@@ -1,5 +1,5 @@
 variables:
-  CI_IMAGE: registry.gitlab.com/qbau/software-and-apps/ci-dockerfiles/ubuntu_x86-22.04:all_dep_clang-1
+  CI_IMAGE: registry.gitlab.com/qbau/software-and-apps/ci-dockerfiles/ubuntu_x86-22.04:all_dep_clang-2
   # CORE_REF specifies the reference to copy artifacts from e.g. "refs/merge-requests/209/head"
   # default is "main"
   CORE_REF: main
