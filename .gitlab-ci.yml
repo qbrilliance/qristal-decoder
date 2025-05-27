@@ -1,5 +1,5 @@
 variables:
-  CI_IMAGE: registry.gitlab.com/qbau/software-and-apps/ci-dockerfiles/ubuntu_x86-22.04:all_dep_clang-2
+  CI_IMAGE: registry.gitlab.com/qbau/software-and-apps/ci-dockerfiles/ubuntu_amd64-22.04:all_dep_clang-3
   # CORE_REF specifies the reference to copy artifacts from e.g. "refs/merge-requests/209/head"
   # default is "main"
   CORE_REF: main
@@ -51,6 +51,9 @@ ci-build-triggered-from-upstream:
     paths:
       - build/CITests_decoder
       - build/cmake_install.cmake
+      - build/_deps/googletest-build/cmake_install.cmake
+      - build/_deps/googletest-build/googletest/cmake_install.cmake
+      - build/_deps/googletest-build/googlemock/cmake_install.cmake
       - build/lib*
 
 ci-cpp-tests-triggered-from-upstream:
@@ -100,6 +103,9 @@ ci-build-triggered-locally:
     paths:
       - build/CITests_decoder
       - build/cmake_install.cmake
+      - build/_deps/googletest-build/cmake_install.cmake
+      - build/_deps/googletest-build/googletest/cmake_install.cmake
+      - build/_deps/googletest-build/googlemock/cmake_install.cmake
       - build/lib*
 
 ci-cpp-tests-triggered-locally:

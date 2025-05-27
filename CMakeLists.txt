@@ -64,18 +64,7 @@ if (NOT qristal_core_FOUND)
     message(FATAL_ERROR "Could not find core ${CORE_VERSION}. Please set qristal_core_DIR to its installed location, or pass -DINSTALL_MISSING=ON.")
   endif()
 
-  # Include CPM for managing dependencies, and set it up to cache them in the deps folder.
-  set(CPM_DOWNLOAD_VERSION 0.36.0)
-  set(CPM_SOURCE_CACHE "${CMAKE_CURRENT_LIST_DIR}/deps" CACHE PATH "Dependencies path.")
-  set(CPM_DOWNLOAD_LOCATION "${CPM_SOURCE_CACHE}/cpm/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
-  if(NOT (EXISTS ${CPM_DOWNLOAD_LOCATION}))
-    message(STATUS "Downloading CPM.cmake to ${CPM_DOWNLOAD_LOCATION}")
-    file(DOWNLOAD
-         https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake
-         ${CPM_DOWNLOAD_LOCATION}
-    )
-  endif()
-  include(${CPM_DOWNLOAD_LOCATION})
+  include(${CMAKE_CURRENT_LIST_DIR}/cmake/cpm.cmake)
 
   # Core repository of Qristal - use public version by default
   set(QRISTAL_GIT_CORE https://github.com/qbrilliance/qristal-core.git CACHE STRING "Git repository for core components of Qristal")
@@ -138,25 +127,4 @@ install(
   RENAME README_${PROJECT_NAME}.md
 )
 
-# XaccInitialisedTests.cpp is in a different core location in the source vs install.
-# Add a test to check which one to use.
-
-# Default to core install location
-set(XACC_TEST_DIR ${qristal_core_DIR}/tests)
-if(EXISTS ${qristal_core_DIR}/tests/misc_cpp)
-  # Use core source location instead
-  set(XACC_TEST_DIR ${qristal_core_DIR}/tests/misc_cpp)
-endif()
-
-# Add tests
-add_executable(CITests_decoder
-  ${XACC_TEST_DIR}/XaccInitialisedTests.cpp
-  tests/SimplifiedDecoderAlgorithm.cpp
-  tests/DecoderKernel.cpp
-  tests/QuantumDecoderAlgorithm.cpp
-)
-target_link_libraries(CITests_decoder
-  PRIVATE
-    qristal::core
-)
-add_test(NAME ci_tester COMMAND CITests_decoder)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/tests.cmake)
